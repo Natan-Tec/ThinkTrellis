@@ -3,12 +3,16 @@ from __future__ import annotations
 import html
 import json
 import math
+import os
 from pathlib import Path
 import sys
+import tempfile
 import textwrap
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, font as tkfont, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
+import traceback
+from typing import Literal
 
 from . import (
     APP_NAME,
@@ -18,6 +22,7 @@ from . import (
     LEGACY_MAP_EXTENSIONS,
     MAP_FILE_EXTENSION,
 )
+from .colors import readable_text_color, safe_hex_color as _safe_hex_color
 from .model import DEFAULT_NODE_COLORS, MapValidationError, MindMap, MindNode
 
 try:  # O executável inclui esta biblioteca; o gerador interno mantém o app independente dela.
@@ -28,44 +33,55 @@ except ImportError:  # pragma: no cover - depende da instalação usada para exe
     ReportLabCanvas = None
 
 
+# Visual clássico inspirado no Windows 98: cinza de janela, campos brancos
+# afundados, botões com relevo e azul-marinho como única cor de destaque.
+# "hilite", "light", "shadow" e "darkshadow" formam o relevo (de claro a escuro).
 THEMES = {
-    "dark": {
-        "name": "Escuro",
-        "bg": "#0B1220",
-        "surface": "#111B2E",
-        "surface_alt": "#17243A",
-        "canvas": "#0D1628",
-        "canvas_grid": "#17243A",
-        "border": "#263650",
-        "text": "#F7FAFF",
-        "muted": "#93A4BE",
-        "primary": "#3B82F6",
-        "primary_hover": "#5A98FA",
-        "primary_soft": "#193968",
-        "danger": "#EF6B73",
-        "connection": "#4D6387",
-        "node_text": "#FFFFFF",
-        "shadow": "#08101D",
-    },
     "light": {
-        "name": "Claro",
-        "bg": "#EEF3FB",
-        "surface": "#FFFFFF",
-        "surface_alt": "#F6F8FC",
-        "canvas": "#F8FAFE",
-        "canvas_grid": "#E1E8F4",
-        "border": "#D8E1EF",
-        "text": "#17233A",
-        "muted": "#62718A",
-        "primary": "#2563EB",
-        "primary_hover": "#3B82F6",
-        "primary_soft": "#DBEAFE",
-        "danger": "#D34B55",
-        "connection": "#A4B5CD",
-        "node_text": "#FFFFFF",
-        "shadow": "#DCE5F3",
+        "name": "Clássico",
+        "bg": "#C0C0C0",
+        "surface": "#C0C0C0",
+        "field": "#FFFFFF",
+        "canvas": "#FFFFFF",
+        "canvas_grid": "#EBEBEB",
+        "hilite": "#FFFFFF",
+        "light": "#DFDFDF",
+        "shadow": "#808080",
+        "darkshadow": "#000000",
+        "border": "#404040",
+        "text": "#000000",
+        "muted": "#3C3C3C",
+        "disabled": "#808080",
+        "primary": "#000080",
+        "primary_hover": "#1A1AA6",
+        "primary_text": "#FFFFFF",
+        "danger": "#800000",
+        "connection": "#404040",
+    },
+    "dark": {
+        "name": "Clássico escuro",
+        "bg": "#3A3A3A",
+        "surface": "#3A3A3A",
+        "field": "#1E1E1E",
+        "canvas": "#1E1E1E",
+        "canvas_grid": "#2A2A2A",
+        "hilite": "#6A6A6A",
+        "light": "#505050",
+        "shadow": "#252525",
+        "darkshadow": "#000000",
+        "border": "#0E0E0E",
+        "text": "#F0F0F0",
+        "muted": "#BDBDBD",
+        "disabled": "#7C7C7C",
+        "primary": "#2F5FB3",
+        "primary_hover": "#4474C8",
+        "primary_text": "#FFFFFF",
+        "danger": "#FF8F8F",
+        "connection": "#A0A0A0",
     },
 }
+
+DEFAULT_THEME = "light"
 
 
 PDF_PAGE_WIDTH = 841.89  # A4 na horizontal, em pontos PDF.
@@ -81,17 +97,6 @@ def _pdf_color(color: str) -> tuple[float, float, float]:
         return tuple(int(raw[index:index + 2], 16) / 255 for index in (0, 2, 4))  # type: ignore[return-value]
     except ValueError:
         return 0.12, 0.16, 0.23
-
-
-def _safe_hex_color(color: str, default: str = "#17233A") -> str:
-    raw = color.lstrip("#")
-    if len(raw) == 6:
-        try:
-            int(raw, 16)
-            return f"#{raw}"
-        except ValueError:
-            pass
-    return default
 
 
 def _pdf_display_text(value: str) -> str:
@@ -129,7 +134,7 @@ class MindMapCanvas(tk.Canvas):
     """Canvas com zoom, arraste, conexões e seleção de ideias."""
 
     def __init__(self, master: tk.Misc, app: "ThinkTrellisApp", **kwargs):
-        super().__init__(master, highlightthickness=0, takefocus=True, **kwargs)
+        super().__init__(master, highlightthickness=0, borderwidth=0, takefocus=True, **kwargs)
         self.app = app
         self.scale = 1.0
         self.pan_x = 0.0
@@ -260,7 +265,7 @@ class MindMapCanvas(tk.Canvas):
                     else "Selecione “Conceito central” e use + Conceito para começar."
                 ),
                 fill=self.palette["muted"],
-                font=("Segoe UI", 10),
+                font=self.app.ui_font(10),
                 tags=("hint",),
             )
 
@@ -280,13 +285,18 @@ class MindMapCanvas(tk.Canvas):
 
     def _draw_connection(self, parent: MindNode, child: MindNode) -> None:
         start, end = self._connection_endpoints(parent, child)
-        bend = (start[0] + end[0]) / 2
+        horizontal = abs(child.x - parent.x) >= abs(child.y - parent.y)
+        if horizontal:
+            middle = (start[0] + end[0]) / 2
+            points = (start[0], start[1], middle, start[1], middle, end[1], end[0], end[1])
+        else:
+            middle = (start[1] + end[1]) / 2
+            points = (start[0], start[1], start[0], middle, end[0], middle, end[0], end[1])
+        # Linhas retas com cotovelo, como num diagrama clássico.
         self.create_line(
-            start[0], start[1], bend, start[1], bend, end[1], end[0], end[1],
+            *points,
             fill=self.palette["connection"],
             width=max(1, int(2 * self.scale)),
-            smooth=True,
-            splinesteps=18,
             tags=("connection",),
         )
 
@@ -315,59 +325,75 @@ class MindMapCanvas(tk.Canvas):
         )
 
     def _draw_relationship(self, source: MindNode, target: MindNode, label: str) -> None:
+        p = self.palette
         start, end = self._connection_endpoints(source, target)
         midpoint = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
         self.create_line(
             start[0], start[1], end[0], end[1],
-            fill=self.palette["connection"],
+            fill=p["connection"],
             width=max(1, int(2 * self.scale)),
             arrow=tk.LAST,
-            arrowshape=(9, 11, 4),
-            smooth=True,
+            arrowshape=(10, 12, 4),
             tags=("relationship",),
         )
-        self.create_text(
+        # A frase da relação fica sobre a seta, dentro de uma etiqueta simples.
+        text_id = self.create_text(
             midpoint[0],
-            midpoint[1] - 12,
+            midpoint[1],
             text=label,
-            fill=self.palette["text"],
-            font=("Segoe UI", max(8, int(9 * self.scale)), "bold"),
+            fill=p["text"],
+            font=self.app.ui_font(max(8, int(9 * self.scale)), "bold"),
             tags=("relationship",),
         )
+        box = self.bbox(text_id)
+        if box:
+            backdrop = self.create_rectangle(
+                box[0] - 4, box[1] - 2, box[2] + 4, box[3] + 2,
+                fill=p["canvas"],
+                outline=p["shadow"],
+                tags=("relationship",),
+            )
+            self.tag_lower(backdrop, text_id)
+
+    def _draw_bevel(self, x1: float, y1: float, x2: float, y2: float, raised: bool, tags: tuple[str, ...]) -> None:
+        """Desenha o relevo de dois níveis dos botões clássicos."""
+        p = self.palette
+        if raised:
+            top_outer, top_inner = p["hilite"], p["light"]
+            bottom_outer, bottom_inner = p["darkshadow"], p["shadow"]
+        else:
+            top_outer, top_inner = p["shadow"], p["darkshadow"]
+            bottom_outer, bottom_inner = p["hilite"], p["light"]
+        if self.scale < 0.7:  # Em zoom pequeno, uma linha só mantém a caixa nítida.
+            self.create_line(x1, y2, x1, y1, x2, y1, fill=top_outer, tags=tags)
+            self.create_line(x1, y2, x2, y2, x2, y1, fill=bottom_inner, tags=tags)
+            return
+        self.create_line(x1, y2, x1, y1, x2, y1, fill=top_outer, tags=tags)
+        self.create_line(x1 + 1, y2 - 1, x1 + 1, y1 + 1, x2 - 1, y1 + 1, fill=top_inner, tags=tags)
+        self.create_line(x1, y2, x2, y2, x2, y1, fill=bottom_outer, tags=tags)
+        self.create_line(x1 + 1, y2 - 1, x2 - 1, y2 - 1, x2 - 1, y1 + 1, fill=bottom_inner, tags=tags)
 
     def _draw_node(self, node: MindNode) -> None:
+        p = self.palette
         x1, y1, x2, y2 = self.screen_box(node)
         self._node_boxes[node.id] = (x1, y1, x2, y2)
         selected = node.id == self.app.selected_id
         hovered = node.id == self._hovered
-        radius = max(10, int(16 * self.scale))
-        shadow_offset = max(2, int(4 * self.scale))
+        tags = ("node", node.id)
+        text_color = readable_text_color(node.color)
 
-        self._round_rect(
-            x1 + shadow_offset,
-            y1 + shadow_offset,
-            x2 + shadow_offset,
-            y2 + shadow_offset,
-            radius,
-            fill=self.palette["shadow"],
-            outline="",
-            tags=("node", node.id),
-        )
-        outline = self.palette["primary"] if selected else (self.palette["text"] if hovered else node.color)
-        outline_width = max(2, int((3 if selected else 1.5) * self.scale))
-        self._round_rect(
-            x1,
-            y1,
-            x2,
-            y2,
-            radius,
-            fill=node.color,
-            outline=outline,
-            width=outline_width,
-            tags=("node", node.id),
-        )
+        if selected:
+            self.create_rectangle(x1 - 4, y1 - 4, x2 + 4, y2 + 4, outline=p["primary"], width=2, tags=tags)
+        elif hovered:
+            self.create_rectangle(x1 - 3, y1 - 3, x2 + 3, y2 + 3, outline=p["shadow"], dash=(2, 2), tags=tags)
 
-        text_size = max(8, min(14, int(11 * self.scale)))
+        self.create_rectangle(x1, y1, x2, y2, fill=node.color, outline=p["darkshadow"], tags=tags)
+        self._draw_bevel(x1 + 1, y1 + 1, x2 - 1, y2 - 1, raised=True, tags=tags)
+        if selected:
+            # O retângulo pontilhado é o "foco" clássico do Windows.
+            self.create_rectangle(x1 + 6, y1 + 6, x2 - 6, y2 - 6, outline=text_color, dash=(1, 2), tags=tags)
+
+        text_size = max(8, min(14, int(10 * self.scale)))
         lines = wrap_label(node.text)
         note_dot = " •" if node.note.strip() else ""
         label = "\n".join(lines) + note_dot
@@ -376,47 +402,20 @@ class MindMapCanvas(tk.Canvas):
             (y1 + y2) / 2,
             text=label,
             width=max(68, x2 - x1 - 28),
-            fill=self.palette["node_text"],
+            fill=text_color,
             justify="center",
-            font=("Segoe UI", text_size, "bold"),
-            tags=("node", node.id),
+            font=self.app.ui_font(text_size, "bold"),
+            tags=tags,
         )
         if node.collapsed and self.app.map.children(node.id):
-            self.create_oval(
-                x2 - 23 * self.scale,
-                y1 + 9 * self.scale,
-                x2 - 9 * self.scale,
-                y1 + 23 * self.scale,
-                fill="#FFFFFF",
-                outline="",
-                tags=("node", node.id),
-            )
-            self.create_text(
-                x2 - 16 * self.scale,
-                y1 + 16 * self.scale,
-                text="+",
-                fill=node.color,
-                font=("Segoe UI", max(7, int(10 * self.scale)), "bold"),
-                tags=("node", node.id),
-            )
-
-    def _round_rect(self, x1: float, y1: float, x2: float, y2: float, radius: float, **kwargs) -> int:
-        radius = min(radius, abs(x2 - x1) / 2, abs(y2 - y1) / 2)
-        points = [
-            x1 + radius, y1,
-            x2 - radius, y1,
-            x2, y1,
-            x2, y1 + radius,
-            x2, y2 - radius,
-            x2, y2,
-            x2 - radius, y2,
-            x1 + radius, y2,
-            x1, y2,
-            x1, y2 - radius,
-            x1, y1 + radius,
-            x1, y1,
-        ]
-        return self.create_polygon(points, smooth=True, splinesteps=18, **kwargs)
+            # Quadradinho com "+", igual ao das árvores do Windows clássico.
+            size = max(9.0, 11.0 * self.scale)
+            bx2, by1 = x2 - 6, y1 + 6
+            bx1, by2 = bx2 - size, by1 + size
+            cx, cy = (bx1 + bx2) / 2, (by1 + by2) / 2
+            self.create_rectangle(bx1, by1, bx2, by2, fill="#FFFFFF", outline="#000000", tags=tags)
+            self.create_line(bx1 + 3, cy, bx2 - 2, cy, fill="#000000", tags=tags)
+            self.create_line(cx, by1 + 3, cx, by2 - 2, fill="#000000", tags=tags)
 
     def _hit_test(self, x: float, y: float) -> str | None:
         for node_id, (x1, y1, x2, y2) in reversed(list(self._node_boxes.items())):
@@ -524,9 +523,10 @@ class ThinkTrellisApp:
 
     def __init__(self) -> None:
         self.root = tk.Tk()
+        self.font_family = self._pick_font_family()
+        self._apply_named_fonts()
         self.root.title(f"{APP_NAME} {APP_VERSION}")
-        self.root.geometry("1440x860")
-        self.root.minsize(1040, 660)
+        self._place_window()
         self._app_logo_image: tk.PhotoImage | None = None
         self._header_logo_image: tk.PhotoImage | None = None
         self._set_window_icon()
@@ -534,9 +534,9 @@ class ThinkTrellisApp:
         self.data_dir = self._data_directory()
         self.preferences_path = self.data_dir / "preferences.json"
         self.autosave_path = self.data_dir / f"recovery{MAP_FILE_EXTENSION}"
-        self.theme_name = self._read_preference("theme", "dark")
+        self.theme_name = self._read_preference("theme", DEFAULT_THEME)
         if self.theme_name not in THEMES:
-            self.theme_name = "dark"
+            self.theme_name = DEFAULT_THEME
         self.palette = THEMES[self.theme_name]
 
         self.map = MindMap.new()
@@ -549,7 +549,9 @@ class ThinkTrellisApp:
         self._syncing_tree = False
         self._recovery_loaded = False
         self._menus: list[tk.Menu] = []
-        self._swatches: list[tk.Button] = []
+        self._swatches: list[tuple[tk.Button, str]] = []
+        self._groups: list[tk.LabelFrame] = []
+        self._bevels: list[tk.Frame] = []
         self._help_windows: list[tk.Toplevel] = []
         self._relationship_dialog: tk.Toplevel | None = None
 
@@ -572,8 +574,64 @@ class ThinkTrellisApp:
         self.root.after(250, self._offer_map_type_choice)
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
+    # ------------------------------------------------------------------
+    # Fontes e janela
+    # ------------------------------------------------------------------
+    def _pick_font_family(self) -> str:
+        """Escolhe a fonte mais parecida com a do Windows clássico que existir."""
+        try:
+            installed = {name.casefold(): name for name in tkfont.families(self.root)}
+        except tk.TclError:
+            return "Helvetica"
+        for candidate in ("Tahoma", "Liberation Sans", "Arimo", "Noto Sans", "DejaVu Sans", "Segoe UI", "Arial", "Helvetica"):
+            if candidate.casefold() in installed:
+                return installed[candidate.casefold()]
+        return "Helvetica"
+
+    def _apply_named_fonts(self) -> None:
+        """Faz menus, listas e caixas de mensagem usarem a mesma fonte do app."""
+        for name in (
+            "TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont",
+            "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont",
+        ):
+            try:
+                tkfont.nametofont(name, root=self.root).configure(family=self.font_family, size=9)
+            except tk.TclError:
+                pass
+
+    def ui_font(self, size: int = 9, weight: str = "normal") -> tuple[str, int, str]:
+        return (self.font_family, size, weight)
+
+    def _place_window(self) -> None:
+        """Abre a janela centralizada, sem passar do tamanho da tela."""
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        width = min(1280, max(960, screen_width - 60))
+        height = min(800, max(600, screen_height - 130))
+        left = max(0, (screen_width - width) // 2)
+        top = max(0, (screen_height - height) // 3)
+        self.root.geometry(f"{width}x{height}+{left}+{top}")
+        self.root.minsize(min(960, screen_width), min(600, screen_height))
+
+    @staticmethod
+    def _alive(widget: tk.Misc) -> bool:
+        try:
+            return bool(widget.winfo_exists())
+        except tk.TclError:
+            return False
+
+    def _grab_when_visible(self, window: tk.Toplevel, attempts: int = 20) -> None:
+        """Deixa a janela modal assim que ela aparece (no Linux o grab falha antes disso)."""
+        try:
+            window.grab_set()
+        except tk.TclError:
+            if attempts > 0 and self._alive(window):
+                window.after(50, lambda: self._grab_when_visible(window, attempts - 1))
+
     def _data_directory(self) -> Path:
-        base = Path.home() / ".thinktrellis"
+        # THINKTRELLIS_DATA_DIR permite testar sem mexer nos dados da pessoa.
+        override = os.environ.get("THINKTRELLIS_DATA_DIR")
+        base = Path(override) if override else Path.home() / ".thinktrellis"
         base.mkdir(parents=True, exist_ok=True)
         return base
 
@@ -584,12 +642,12 @@ class ThinkTrellisApp:
         return base / "assets" / filename
 
     def _set_window_icon(self) -> None:
-        logo_path = self._asset_path("thinktrellis-logo.png")
+        # Versões já reduzidas da logo ficam mais nítidas que encolher a
+        # imagem grande dentro do Tk.
         try:
-            self._app_logo_image = tk.PhotoImage(file=logo_path)
-            scale = max(1, round(self._app_logo_image.width() / 46))
-            self._header_logo_image = self._app_logo_image.subsample(scale, scale)
-            self.root.iconphoto(True, self._app_logo_image)
+            self._header_logo_image = tk.PhotoImage(file=str(self._asset_path("thinktrellis-logo-32.png")))
+            self._app_logo_image = tk.PhotoImage(file=str(self._asset_path("thinktrellis-logo-64.png")))
+            self.root.iconphoto(True, self._app_logo_image, self._header_logo_image)
         except tk.TclError:
             self._app_logo_image = None
             self._header_logo_image = None
@@ -653,9 +711,9 @@ class ThinkTrellisApp:
         view_menu.add_separator()
         theme_menu = self._new_menu(view_menu)
         self.theme_var = tk.StringVar(value=self.theme_name)
-        theme_menu.add_radiobutton(label="Tema escuro", value="dark", variable=self.theme_var, command=lambda: self.apply_theme("dark"))
-        theme_menu.add_radiobutton(label="Tema claro", value="light", variable=self.theme_var, command=lambda: self.apply_theme("light"))
-        view_menu.add_cascade(label="Tema", menu=theme_menu)
+        theme_menu.add_radiobutton(label=THEMES["light"]["name"], value="light", variable=self.theme_var, command=lambda: self.apply_theme("light"))
+        theme_menu.add_radiobutton(label=THEMES["dark"]["name"], value="dark", variable=self.theme_var, command=lambda: self.apply_theme("dark"))
+        view_menu.add_cascade(label="Visual", menu=theme_menu)
         menu_bar.add_cascade(label="Visualizar", menu=view_menu)
 
         help_menu = self._new_menu(menu_bar)
@@ -698,64 +756,118 @@ class ThinkTrellisApp:
             background=p["surface"],
             foreground=p["text"],
             activebackground=p["primary"],
-            activeforeground="#FFFFFF",
-            disabledforeground=p["muted"],
-            borderwidth=0,
-            relief="flat",
+            activeforeground=p["primary_text"],
+            disabledforeground=p["disabled"],
+            borderwidth=2,
+            relief="raised",
+            font=self.ui_font(9),
         )
+
+    def _group(self, master: tk.Misc, text: str) -> tk.LabelFrame:
+        """Caixa com título e borda gravada, como nas janelas do Windows clássico."""
+        frame = tk.LabelFrame(master, text=text, bd=2, relief="groove", padx=8, pady=6)
+        self._groups.append(frame)
+        self._style_group(frame)
+        return frame
+
+    def _style_group(self, frame: tk.LabelFrame) -> None:
+        p = self.palette
+        frame.configure(bg=p["surface"], fg=p["text"], font=self.ui_font(9))
+
+    def _bevel_frame(self, master: tk.Misc, relief: Literal["raised", "sunken"] = "sunken", border: int = 2) -> tk.Frame:
+        """Moldura com relevo (afundada ou saliente) desenhada pelo próprio Tk."""
+        frame = tk.Frame(master, bd=border, relief=relief, bg=self.palette["surface"])
+        self._bevels.append(frame)
+        return frame
+
+    def _style_classic_widgets(self) -> None:
+        p = self.palette
+        self._groups = [frame for frame in self._groups if self._alive(frame)]
+        self._bevels = [frame for frame in self._bevels if self._alive(frame)]
+        for group in self._groups:
+            self._style_group(group)
+        for bevel in self._bevels:
+            bevel.configure(bg=p["surface"])
+
+    def _make_text(self, master: tk.Misc, **options) -> ScrolledText:
+        """Campo de texto afundado, com a mesma barra de rolagem do resto do app."""
+        text = ScrolledText(master, relief="sunken", borderwidth=2, highlightthickness=0, **options)
+        text.vbar.destroy()
+        bar = ttk.Scrollbar(text.frame, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=bar.set)
+        bar.pack(side="right", fill="y", before=text)
+        text.vbar = bar  # type: ignore[assignment]
+        self._style_text(text)
+        return text
+
+    def _style_text(self, text: tk.Text) -> None:
+        p = self.palette
+        text.configure(
+            bg=p["field"],
+            fg=p["text"],
+            insertbackground=p["text"],
+            selectbackground=p["primary"],
+            selectforeground=p["primary_text"],
+            font=self.ui_font(9),
+            padx=6,
+            pady=4,
+        )
+
+    def _refresh_swatches(self) -> None:
+        """Mostra afundada a cor que a caixa selecionada está usando."""
+        current = ""
+        if self.selected_id in self.map.nodes:
+            current = self.map.nodes[self.selected_id].color.upper()
+        for button, color in self._swatches:
+            button.configure(relief="sunken" if color.upper() == current else "raised")
 
     def _build_layout(self) -> None:
         outer = ttk.Frame(self.root, style="App.TFrame", padding=0)
         outer.pack(fill="both", expand=True)
 
-        header = ttk.Frame(outer, style="Header.TFrame", padding=(22, 14))
+        # Barra superior: identidade, nome do mapa e as ações principais.
+        header = ttk.Frame(outer, style="Header.TFrame", padding=(10, 6))
         header.pack(fill="x")
         if self._header_logo_image:
-            logo = ttk.Label(header, image=self._header_logo_image, style="Header.TLabel")
-            logo.image = self._header_logo_image
+            logo = ttk.Label(header, image=self._header_logo_image)
         else:
             logo = ttk.Label(header, text="T", style="Logo.TLabel", anchor="center", width=2)
-        logo.pack(side="left", padx=(0, 10))
-        brand = ttk.Label(header, text=APP_NAME, style="Brand.TLabel")
-        brand.pack(side="left")
-        version = ttk.Label(header, text=f"v{APP_VERSION}", style="Version.TLabel")
-        version.pack(side="left", padx=(9, 8))
-        self.map_type_badge = ttk.Label(header, text="MAPA MENTAL", style="Version.TLabel")
-        self.map_type_badge.pack(side="left", padx=(0, 14))
+        logo.pack(side="left", padx=(0, 8))
+        ttk.Label(header, text=APP_NAME, style="Brand.TLabel").pack(side="left")
+        self.map_type_badge = ttk.Label(header, text="Mapa mental", style="Version.TLabel")
+        self.map_type_badge.pack(side="left", padx=(10, 0))
 
-        self.map_title_entry = ttk.Entry(header, textvariable=self.title_var, style="Title.TEntry", width=32)
-        self.map_title_entry.pack(side="left", fill="x", expand=True, padx=(0, 18))
+        # Os botões são posicionados antes do título para que, numa janela
+        # estreita, o campo do título encolha primeiro e nenhum botão suma.
+        self.undo_button = ttk.Button(header, text="Desfazer", command=self.undo, style="Quiet.TButton")
+        self.undo_button.pack(side="right", padx=(4, 0))
+        self.organize_button = ttk.Button(header, text="Organizar", command=self.organize_map, style="Quiet.TButton")
+        self.organize_button.pack(side="right", padx=(4, 0))
+        ttk.Separator(header, orient="vertical").pack(side="right", fill="y", padx=8, pady=2)
+        self.secondary_action_button = ttk.Button(header, text="+ Subideia", command=self.add_child, style="Primary.TButton")
+        self.secondary_action_button.pack(side="right", padx=(4, 0))
+        self.primary_action_button = ttk.Button(header, text="+ Outra ideia", command=self.add_sibling, style="Quiet.TButton")
+        self.primary_action_button.pack(side="right", padx=(4, 0))
+
+        self.map_title_entry = ttk.Entry(header, textvariable=self.title_var, style="Title.TEntry", width=28)
+        self.map_title_entry.pack(side="left", fill="x", expand=True, padx=(14, 14))
         self.map_title_entry.bind("<FocusOut>", lambda _event: self.apply_map_title())
         self.map_title_entry.bind("<Return>", self._title_enter)
 
-        self.theme_button = ttk.Button(header, command=self.toggle_theme, style="Quiet.TButton", width=10)
-        self.theme_button.pack(side="right", padx=(8, 0))
-        self.undo_button = ttk.Button(header, text="↶ Desfazer", command=self.undo, style="Quiet.TButton")
-        self.undo_button.pack(side="right", padx=5)
-        self.organize_button = ttk.Button(header, text="Organizar", command=self.organize_map, style="Quiet.TButton")
-        self.organize_button.pack(side="right", padx=5)
-        self.secondary_action_button = ttk.Button(header, text="+ Subideia", command=self.add_child, style="Primary.TButton")
-        self.secondary_action_button.pack(side="right", padx=5)
-        self.primary_action_button = ttk.Button(header, text="+ Outra ideia", command=self.add_sibling, style="Quiet.TButton")
-        self.primary_action_button.pack(side="right", padx=5)
+        ttk.Separator(outer, orient="horizontal").pack(fill="x")
 
-        body = ttk.Frame(outer, style="App.TFrame", padding=(16, 0, 16, 10))
+        body = ttk.Frame(outer, style="App.TFrame", padding=(8, 8, 8, 6))
         body.pack(fill="both", expand=True)
 
-        left = ttk.Frame(body, style="Panel.TFrame", width=250, padding=(16, 18))
-        left.pack(side="left", fill="y", padx=(0, 12))
+        # Coluna da esquerda: como usar e estrutura do mapa.
+        left = ttk.Frame(body, style="App.TFrame", width=236)
+        left.pack(side="left", fill="y")
         left.pack_propagate(False)
-        ttk.Label(left, text="COMECE POR AQUI", style="Section.TLabel").pack(anchor="w")
-        self.intro_label = ttk.Label(left, text="Um mapa de cada vez, sem complicação.", style="Hint.TLabel", wraplength=210)
-        self.intro_label.pack(anchor="w", pady=(7, 17))
-        self.step_one_title, self.step_one_detail = self._step(left, "1", "Clique em uma caixa", "Ela fica marcada. À direita você pode mudar o nome e a cor.")
-        self.step_two_title, self.step_two_detail = self._step(left, "2", "Adicione uma subideia", "Com a caixa marcada, clique em + Subideia no alto.")
-        self.step_three_title, self.step_three_detail = self._step(left, "3", "Organize quando quiser", "Arraste as caixas ou clique em Organizar.")
-
-        ttk.Separator(left).pack(fill="x", pady=17)
-        self.tree_title_label = ttk.Label(left, text="ESTRUTURA DO MAPA", style="Section.TLabel")
-        self.tree_title_label.pack(anchor="w", pady=(0, 8))
-        tree_frame = ttk.Frame(left, style="Panel.TFrame")
+        # Sem painel de instruções: a dica de uma linha acima do mapa e a
+        # mensagem no mapa vazio já mostram o caminho, deixando a tela limpa.
+        self.tree_group = self._group(left, "Estrutura do mapa")
+        self.tree_group.pack(fill="both", expand=True)
+        tree_frame = ttk.Frame(self.tree_group, style="Panel.TFrame")
         tree_frame.pack(fill="both", expand=True)
         self.tree = ttk.Treeview(tree_frame, show="tree", selectmode="browse", style="Mind.Treeview")
         tree_scroll = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
@@ -764,41 +876,45 @@ class ThinkTrellisApp:
         tree_scroll.pack(side="right", fill="y")
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
 
-        middle = ttk.Frame(body, style="Panel.TFrame")
-        middle.pack(side="left", fill="both", expand=True)
-        canvas_toolbar = ttk.Frame(middle, style="CanvasToolbar.TFrame", padding=(14, 9))
-        canvas_toolbar.pack(fill="x")
-        ttk.Label(canvas_toolbar, text="MAPA", style="Section.TLabel").pack(side="left")
+        # Centro: o mapa, numa moldura afundada, com zoom logo acima.
+        middle = ttk.Frame(body, style="App.TFrame")
+        middle.pack(side="left", fill="both", expand=True, padx=8)
+        canvas_toolbar = ttk.Frame(middle, style="App.TFrame")
+        canvas_toolbar.pack(fill="x", pady=(0, 6))
         self.canvas_hint_label = ttk.Label(canvas_toolbar, text="Duplo clique edita • Arraste o fundo para navegar", style="Hint.TLabel")
-        self.canvas_hint_label.pack(side="left", padx=12)
+        self.canvas_hint_label.pack(side="left")
         ttk.Button(canvas_toolbar, text="Ajustar", command=self.canvas_fit_safe, style="Quiet.TButton").pack(side="right")
         ttk.Button(canvas_toolbar, text="+", command=lambda: self.canvas.zoom_by(1.15), style="Zoom.TButton", width=3).pack(side="right", padx=(6, 0))
         ttk.Label(canvas_toolbar, textvariable=self.zoom_var, style="Zoom.TLabel", width=6, anchor="center").pack(side="right")
-        ttk.Button(canvas_toolbar, text="−", command=lambda: self.canvas.zoom_by(0.87), style="Zoom.TButton", width=3).pack(side="right", padx=(0, 6))
+        ttk.Button(canvas_toolbar, text="-", command=lambda: self.canvas.zoom_by(0.87), style="Zoom.TButton", width=3).pack(side="right", padx=(0, 6))
 
-        self.canvas = MindMapCanvas(middle, self, bg=self.palette["canvas"])
-        self.canvas.pack(fill="both", expand=True, padx=1, pady=(0, 1))
+        canvas_frame = self._bevel_frame(middle, relief="sunken", border=2)
+        canvas_frame.pack(fill="both", expand=True)
+        self.canvas = MindMapCanvas(canvas_frame, self, bg=self.palette["canvas"])
+        self.canvas.pack(fill="both", expand=True)
 
-        right = ttk.Frame(body, style="Panel.TFrame", width=292, padding=(16, 18))
-        right.pack(side="right", fill="y", padx=(12, 0))
+        # Coluna da direita: detalhes da caixa selecionada.
+        right = ttk.Frame(body, style="App.TFrame", width=272)
+        right.pack(side="right", fill="y")
         right.pack_propagate(False)
-        self.details_heading_label = ttk.Label(right, text="DETALHES DA IDEIA", style="Section.TLabel")
-        self.details_heading_label.pack(anchor="w")
-        self.selected_badge = ttk.Label(right, text="", style="Selected.TLabel", wraplength=245)
-        self.selected_badge.pack(anchor="w", fill="x", pady=(7, 15))
-        ttk.Label(right, text="Título", style="Field.TLabel").pack(anchor="w")
-        self.node_name_entry = ttk.Entry(right, textvariable=self.node_name_var, style="Inspector.TEntry")
-        self.node_name_entry.pack(fill="x", pady=(5, 12))
+        self.details_group = self._group(right, "Detalhes da ideia")
+        self.details_group.pack(fill="both", expand=True)
+        details = self.details_group
+        self.selected_badge = ttk.Label(details, text="", style="Selected.TLabel", wraplength=226)
+        self.selected_badge.pack(anchor="w", fill="x", pady=(0, 8))
+        ttk.Label(details, text="Título", style="Field.TLabel").pack(anchor="w")
+        self.node_name_entry = ttk.Entry(details, textvariable=self.node_name_var, style="Inspector.TEntry")
+        self.node_name_entry.pack(fill="x", pady=(3, 8))
         self.node_name_entry.bind("<Return>", self._inspector_enter)
-        self.parent_field_label = ttk.Label(right, text="Conectada a", style="Field.TLabel")
+        self.parent_field_label = ttk.Label(details, text="Conectada a", style="Field.TLabel")
         self.parent_field_label.pack(anchor="w")
-        ttk.Label(right, textvariable=self.parent_var, style="Value.TLabel", wraplength=244).pack(anchor="w", pady=(4, 13))
-        ttk.Label(right, text="Nota (opcional)", style="Field.TLabel").pack(anchor="w")
-        self.note_text = ScrolledText(right, height=5, wrap="word", relief="flat", borderwidth=0, font=("Segoe UI", 10), undo=True)
-        self.note_text.pack(fill="x", pady=(5, 12))
-        ttk.Label(right, text="Cor", style="Field.TLabel").pack(anchor="w")
-        colors = ttk.Frame(right, style="Panel.TFrame")
-        colors.pack(fill="x", pady=(6, 15))
+        ttk.Label(details, textvariable=self.parent_var, style="Value.TLabel", wraplength=226).pack(anchor="w", pady=(3, 8))
+        ttk.Label(details, text="Nota (opcional)", style="Field.TLabel").pack(anchor="w")
+        self.note_text = self._make_text(details, height=5, wrap="word", undo=True)
+        self.note_text.pack(fill="x", pady=(3, 8))
+        ttk.Label(details, text="Cor", style="Field.TLabel").pack(anchor="w")
+        colors = ttk.Frame(details, style="Panel.TFrame")
+        colors.pack(fill="x", pady=(4, 10))
         for index, color in enumerate(DEFAULT_NODE_COLORS):
             button = tk.Button(
                 colors,
@@ -806,36 +922,29 @@ class ThinkTrellisApp:
                 activebackground=color,
                 width=2,
                 height=1,
-                relief="flat",
+                relief="raised",
+                bd=2,
+                highlightthickness=0,
                 cursor="hand2",
                 command=lambda current=color: self.set_selected_color(current),
             )
-            button.grid(row=index // 4, column=index % 4, padx=3, pady=3, sticky="w")
-            self._swatches.append(button)
-        ttk.Button(right, text="Aplicar alterações", command=self.apply_inspector, style="Primary.TButton").pack(fill="x")
-        self.collapse_button = ttk.Button(right, text="Recolher / expandir", command=self.toggle_collapsed, style="Quiet.TButton")
-        self.collapse_button.pack(fill="x", pady=(8, 0))
-        self.delete_button = ttk.Button(right, text="Apagar ideia", command=self.delete_selected, style="Danger.TButton")
-        self.delete_button.pack(fill="x", pady=(8, 0))
-        self.right_tip_label = ttk.Label(right, text="Não precisa decorar atalhos: use os botões no alto da tela.", style="Hint.TLabel", wraplength=238)
-        self.right_tip_label.pack(anchor="w", side="bottom", pady=(15, 0))
+            button.grid(row=index // 4, column=index % 4, padx=2, pady=2, sticky="w")
+            self._swatches.append((button, color))
+        ttk.Button(details, text="Aplicar alterações", command=self.apply_inspector, style="Primary.TButton").pack(fill="x")
+        self.collapse_button = ttk.Button(details, text="Recolher / expandir", command=self.toggle_collapsed, style="Quiet.TButton")
+        self.collapse_button.pack(fill="x", pady=(6, 0))
+        self.delete_button = ttk.Button(details, text="Apagar ideia", command=self.delete_selected, style="Danger.TButton")
+        self.delete_button.pack(fill="x", pady=(6, 0))
 
-        status = ttk.Frame(outer, style="Status.TFrame", padding=(22, 7))
+        # Barra de status com dois campos afundados.
+        status = ttk.Frame(outer, style="App.TFrame", padding=(8, 0, 8, 6))
         status.pack(fill="x")
-        ttk.Label(status, textvariable=self.status_var, style="Status.TLabel").pack(side="left")
-        ttk.Label(status, text=f"Offline • Arquivos {MAP_FILE_EXTENSION}", style="Status.TLabel").pack(side="right")
-
-    def _step(self, master: tk.Misc, number: str, title: str, detail: str) -> tuple[ttk.Label, ttk.Label]:
-        step = ttk.Frame(master, style="Panel.TFrame")
-        step.pack(fill="x", pady=6)
-        ttk.Label(step, text=number, style="Step.TLabel", width=2, anchor="center").pack(side="left", padx=(0, 8))
-        contents = ttk.Frame(step, style="Panel.TFrame")
-        contents.pack(side="left", fill="x", expand=True)
-        title_label = ttk.Label(contents, text=title, style="StepTitle.TLabel")
-        title_label.pack(anchor="w")
-        detail_label = ttk.Label(contents, text=detail, style="Hint.TLabel", wraplength=174)
-        detail_label.pack(anchor="w", pady=(2, 0))
-        return title_label, detail_label
+        message_cell = self._bevel_frame(status, relief="sunken", border=1)
+        message_cell.pack(side="left", fill="x", expand=True)
+        ttk.Label(message_cell, textvariable=self.status_var, style="Status.TLabel", padding=(6, 2)).pack(side="left", fill="x", expand=True)
+        file_cell = self._bevel_frame(status, relief="sunken", border=1)
+        file_cell.pack(side="right", padx=(4, 0))
+        ttk.Label(file_cell, text=f"Offline • Arquivos {MAP_FILE_EXTENSION}", style="Status.TLabel", padding=(8, 2)).pack()
 
     def _bind_shortcuts(self) -> None:
         self.root.bind_all("<Control-n>", lambda _event: self.new_map())
@@ -906,60 +1015,200 @@ class ThinkTrellisApp:
         if hasattr(self, "theme_var"):
             self.theme_var.set(theme_name)
         p = self.palette
+        font = self.ui_font
+        style = self.style
         self.root.configure(bg=p["bg"])
-        self.style.configure(".", background=p["bg"], foreground=p["text"], font=("Segoe UI", 10))
-        self.style.configure("App.TFrame", background=p["bg"])
-        self.style.configure("Header.TFrame", background=p["surface"], borderwidth=0)
-        self.style.configure("Panel.TFrame", background=p["surface"])
-        self.style.configure("CanvasToolbar.TFrame", background=p["surface_alt"])
-        self.style.configure("Status.TFrame", background=p["surface"])
-        self.style.configure("TLabel", background=p["surface"], foreground=p["text"])
-        self.style.configure("Brand.TLabel", background=p["surface"], foreground=p["text"], font=("Segoe UI", 15, "bold"))
-        self.style.configure("Logo.TLabel", background=p["primary"], foreground="#FFFFFF", font=("Segoe UI", 13, "bold"), padding=(6, 3))
-        self.style.configure("Version.TLabel", background=p["primary_soft"], foreground=p["primary"], font=("Segoe UI", 9, "bold"), padding=(7, 3))
-        self.style.configure("Section.TLabel", background=p["surface"], foreground=p["muted"], font=("Segoe UI", 9, "bold"))
-        self.style.configure("Hint.TLabel", background=p["surface"], foreground=p["muted"], font=("Segoe UI", 9))
-        self.style.configure("Field.TLabel", background=p["surface"], foreground=p["muted"], font=("Segoe UI", 9, "bold"))
-        self.style.configure("Value.TLabel", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10))
-        self.style.configure("Selected.TLabel", background=p["primary_soft"], foreground=p["primary"], font=("Segoe UI", 10, "bold"), padding=(9, 7))
-        self.style.configure("Step.TLabel", background=p["primary_soft"], foreground=p["primary"], font=("Segoe UI", 10, "bold"), padding=(5, 4))
-        self.style.configure("StepTitle.TLabel", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10, "bold"))
-        self.style.configure("Status.TLabel", background=p["surface"], foreground=p["muted"], font=("Segoe UI", 9))
-        self.style.configure("Zoom.TLabel", background=p["surface_alt"], foreground=p["muted"], font=("Segoe UI", 9, "bold"))
 
-        self.style.configure("TButton", background=p["surface_alt"], foreground=p["text"], borderwidth=0, padding=(10, 7), font=("Segoe UI", 9, "bold"))
-        self.style.map("TButton", background=[("active", p["border"]), ("pressed", p["primary_soft"])])
-        self.style.configure("Quiet.TButton", background=p["surface_alt"], foreground=p["text"])
-        self.style.map("Quiet.TButton", background=[("active", p["border"]), ("pressed", p["primary_soft"])])
-        self.style.configure("Primary.TButton", background=p["primary"], foreground="#FFFFFF")
-        self.style.map("Primary.TButton", background=[("active", p["primary_hover"]), ("pressed", p["primary"])])
-        self.style.configure("Danger.TButton", background=p["surface_alt"], foreground=p["danger"])
-        self.style.map("Danger.TButton", background=[("active", p["primary_soft"])])
-        self.style.configure("Zoom.TButton", background=p["surface_alt"], foreground=p["text"], padding=(5, 4))
-
-        self.style.configure("TEntry", fieldbackground=p["surface_alt"], foreground=p["text"], insertcolor=p["text"], bordercolor=p["border"], lightcolor=p["border"], darkcolor=p["border"], padding=(9, 7))
-        self.style.configure("Title.TEntry", fieldbackground=p["surface_alt"], foreground=p["text"], font=("Segoe UI", 11, "bold"), padding=(11, 8))
-        self.style.configure("Inspector.TEntry", fieldbackground=p["surface_alt"], foreground=p["text"], font=("Segoe UI", 10), padding=(9, 7))
-        self.style.configure("Treeview", background=p["surface"], fieldbackground=p["surface"], foreground=p["text"], borderwidth=0, font=("Segoe UI", 9), rowheight=27)
-        self.style.map("Treeview", background=[("selected", p["primary_soft"])], foreground=[("selected", p["primary"])])
-        self.style.configure("TScrollbar", background=p["surface_alt"], troughcolor=p["surface"], bordercolor=p["surface"], arrowcolor=p["muted"])
-
-        self.note_text.configure(
-            bg=p["surface_alt"],
-            fg=p["text"],
-            insertbackground=p["text"],
+        # Base: cinza de janela, texto preto e relevo em dois níveis. Os campos
+        # "bordercolor/lightcolor/darkcolor" desenham o chanfro dos widgets.
+        style.configure(
+            ".",
+            background=p["surface"],
+            foreground=p["text"],
+            font=font(9),
+            bordercolor=p["border"],
+            lightcolor=p["hilite"],
+            darkcolor=p["shadow"],
+            troughcolor=p["light"],
+            fieldbackground=p["field"],
             selectbackground=p["primary"],
-            selectforeground="#FFFFFF",
-            highlightthickness=1,
-            highlightbackground=p["border"],
-            highlightcolor=p["primary"],
+            selectforeground=p["primary_text"],
+            insertcolor=p["text"],
+            focuscolor=p["text"],
         )
-        for swatch in self._swatches:
-            swatch.configure(highlightthickness=0)
+        style.map(
+            ".",
+            background=[("disabled", p["surface"]), ("active", p["surface"])],
+            foreground=[("disabled", p["disabled"])],
+        )
+
+        for frame_style in ("App.TFrame", "Header.TFrame", "Panel.TFrame", "Status.TFrame"):
+            style.configure(frame_style, background=p["surface"])
+        style.configure("TLabel", background=p["surface"], foreground=p["text"])
+        style.configure("Brand.TLabel", font=font(12, "bold"))
+        style.configure("Logo.TLabel", background=p["primary"], foreground=p["primary_text"], font=font(12, "bold"), padding=(6, 2))
+        style.configure("Version.TLabel", foreground=p["muted"], font=font(9))
+        style.configure("Hint.TLabel", foreground=p["muted"], font=font(9))
+        style.configure("Field.TLabel", foreground=p["text"], font=font(9))
+        style.configure("Value.TLabel", foreground=p["text"], font=font(9))
+        style.configure("Selected.TLabel", background=p["primary"], foreground=p["primary_text"], font=font(9, "bold"), padding=(8, 4))
+        style.configure("Status.TLabel", foreground=p["text"], font=font(9))
+        style.configure("Zoom.TLabel", foreground=p["text"], font=font(9))
+        style.configure("TSeparator", background=p["shadow"])
+
+        # Botões com relevo; ao clicar, o relevo se inverte (afunda).
+        style.configure(
+            "TButton",
+            background=p["surface"],
+            foreground=p["text"],
+            font=font(9),
+            anchor="center",
+            padding=(10, 3),
+            borderwidth=2,
+            relief="raised",
+        )
+        style.map(
+            "TButton",
+            background=[("disabled", p["surface"]), ("pressed", p["surface"]), ("active", p["surface"])],
+            foreground=[("disabled", p["disabled"])],
+            lightcolor=[("pressed", p["shadow"])],
+            darkcolor=[("pressed", p["hilite"])],
+            bordercolor=[("pressed", p["darkshadow"])],
+            relief=[("pressed", "sunken")],
+        )
+        # O botão principal é o único com cor: azul-marinho, como a seleção clássica.
+        style.configure(
+            "Primary.TButton",
+            background=p["primary"],
+            foreground=p["primary_text"],
+            lightcolor=p["primary_hover"],
+            darkcolor=p["darkshadow"],
+            bordercolor=p["darkshadow"],
+            font=font(9, "bold"),
+        )
+        style.map(
+            "Primary.TButton",
+            background=[("disabled", p["shadow"]), ("pressed", p["primary"]), ("active", p["primary_hover"])],
+            foreground=[("disabled", p["disabled"])],
+            lightcolor=[("pressed", p["darkshadow"])],
+            darkcolor=[("pressed", p["primary_hover"])],
+        )
+        style.configure("Danger.TButton", foreground=p["danger"])
+        style.configure("Zoom.TButton", padding=(4, 1))
+
+        # Campos de texto afundados, com fundo branco.
+        for entry_style, entry_font in (
+            ("TEntry", font(9)),
+            ("Title.TEntry", font(10, "bold")),
+            ("Inspector.TEntry", font(9)),
+        ):
+            style.configure(
+                entry_style,
+                fieldbackground=p["field"],
+                foreground=p["text"],
+                insertcolor=p["text"],
+                bordercolor=p["shadow"],
+                lightcolor=p["hilite"],
+                darkcolor=p["darkshadow"],
+                borderwidth=2,
+                padding=(4, 3),
+                font=entry_font,
+            )
+        style.map(
+            "TEntry",
+            bordercolor=[("focus", p["primary"])],
+            lightcolor=[("focus", p["primary"])],
+            darkcolor=[("focus", p["primary"])],
+        )
+        style.configure(
+            "TCombobox",
+            fieldbackground=p["field"],
+            background=p["surface"],
+            foreground=p["text"],
+            arrowcolor=p["text"],
+            bordercolor=p["shadow"],
+            lightcolor=p["hilite"],
+            darkcolor=p["darkshadow"],
+            insertcolor=p["text"],
+            padding=(4, 3),
+            arrowsize=16,
+        )
+        style.map(
+            "TCombobox",
+            fieldbackground=[("readonly", p["field"])],
+            foreground=[("readonly", p["text"])],
+        )
+        self.root.option_add("*TCombobox*Listbox.background", p["field"])
+        self.root.option_add("*TCombobox*Listbox.foreground", p["text"])
+        self.root.option_add("*TCombobox*Listbox.selectBackground", p["primary"])
+        self.root.option_add("*TCombobox*Listbox.selectForeground", p["primary_text"])
+        self.root.option_add("*TCombobox*Listbox.font", font(9))
+
+        style.configure(
+            "Treeview",
+            background=p["field"],
+            fieldbackground=p["field"],
+            foreground=p["text"],
+            bordercolor=p["shadow"],
+            lightcolor=p["hilite"],
+            darkcolor=p["darkshadow"],
+            borderwidth=2,
+            font=font(9),
+            rowheight=20,
+        )
+        style.map(
+            "Treeview",
+            background=[("selected", p["primary"])],
+            foreground=[("selected", p["primary_text"])],
+        )
+        style.configure(
+            "TScrollbar",
+            background=p["surface"],
+            troughcolor=p["light"],
+            bordercolor=p["border"],
+            lightcolor=p["hilite"],
+            darkcolor=p["shadow"],
+            arrowcolor=p["text"],
+            arrowsize=16,
+            gripcount=0,
+            borderwidth=2,
+        )
+        style.map(
+            "TScrollbar",
+            background=[("active", p["surface"]), ("pressed", p["surface"])],
+        )
+        style.configure(
+            "TNotebook",
+            background=p["surface"],
+            bordercolor=p["border"],
+            lightcolor=p["hilite"],
+            darkcolor=p["shadow"],
+            tabmargins=(2, 4, 2, 0),
+        )
+        style.configure(
+            "TNotebook.Tab",
+            background=p["surface"],
+            foreground=p["text"],
+            bordercolor=p["border"],
+            lightcolor=p["hilite"],
+            darkcolor=p["shadow"],
+            padding=(10, 3),
+        )
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", p["surface"]), ("active", p["surface"])],
+            expand=[("selected", (1, 1, 1, 0))],
+        )
+
+        self._style_classic_widgets()
+        self._style_text(self.note_text)
+        for window in self._help_windows:
+            if self._alive(window):
+                window.configure(bg=p["bg"])
         for menu in self._menus:
             self.configure_menu(menu)
+        self._refresh_swatches()
         self.canvas.redraw()
-        self.theme_button.configure(text="☀ Claro" if theme_name == "dark" else "☾ Escuro")
         if persist:
             self._write_preferences()
 
@@ -992,39 +1241,23 @@ class ThinkTrellisApp:
     def _update_map_type_ui(self, refresh: bool = True) -> None:
         conceptual = self.map.map_type == "conceptual"
         if conceptual:
-            self.map_type_badge.configure(text="MAPA CONCEITUAL")
+            self.map_type_badge.configure(text="Mapa conceitual")
             self.organize_button.configure(text="Organizar")
-            self.intro_label.configure(text="Crie caixas e explique como uma se relaciona com a outra.")
-            self.step_one_title.configure(text="Crie os conceitos")
-            self.step_one_detail.configure(text="Clique em + Conceito para colocar as caixas que você precisa.")
-            self.step_two_title.configure(text="Clique em Conectar")
-            self.step_two_detail.configure(text="Escolha a caixa de onde a seta sai e a caixa para onde ela vai.")
-            self.step_three_title.configure(text="Escreva a frase da seta")
-            self.step_three_detail.configure(text="Exemplo: “1 depende de 2”. Depois clique em Criar ligação.")
-            self.tree_title_label.configure(text="CONCEITOS DO MAPA")
-            self.canvas_hint_label.configure(text="Clique para selecionar • Arraste as caixas • As setas mostram as relações")
-            self.details_heading_label.configure(text="DETALHES DO CONCEITO")
+            self.tree_group.configure(text="Conceitos do mapa")
+            self.canvas_hint_label.configure(text="+ Conceito cria uma caixa • Conectar liga duas caixas com uma seta")
+            self.details_group.configure(text="Detalhes do conceito")
             self.parent_field_label.configure(text="Relações")
             self.collapse_button.configure(state="disabled")
             self.delete_button.configure(text="Apagar conceito")
-            self.right_tip_label.configure(text="Use os botões + Conceito e Conectar no alto da tela. Os atalhos são opcionais.")
         else:
-            self.map_type_badge.configure(text="MAPA MENTAL")
+            self.map_type_badge.configure(text="Mapa mental")
             self.organize_button.configure(text="Organizar")
-            self.intro_label.configure(text="Um mapa de cada vez, sem complicação.")
-            self.step_one_title.configure(text="Escolha uma ideia")
-            self.step_one_detail.configure(text="Clique na caixa que você quer desenvolver.")
-            self.step_two_title.configure(text="Clique em + Subideia")
-            self.step_two_detail.configure(text="Uma caixa nova aparece ligada à ideia escolhida.")
-            self.step_three_title.configure(text="Dê um nome à nova caixa")
-            self.step_three_detail.configure(text="Escreva à direita e clique em Aplicar alterações.")
-            self.tree_title_label.configure(text="ESTRUTURA DO MAPA")
-            self.canvas_hint_label.configure(text="Clique para selecionar • Arraste caixas • Arraste o fundo para navegar")
-            self.details_heading_label.configure(text="DETALHES DA IDEIA")
+            self.tree_group.configure(text="Estrutura do mapa")
+            self.canvas_hint_label.configure(text="Marque uma caixa e use + Subideia • Arraste as caixas para reorganizar")
+            self.details_group.configure(text="Detalhes da ideia")
             self.parent_field_label.configure(text="Conectada a")
             self.collapse_button.configure(state="normal")
             self.delete_button.configure(text="Apagar ideia")
-            self.right_tip_label.configure(text="Não precisa decorar atalhos: use os botões no alto da tela.")
         self._update_action_buttons()
         if hasattr(self, "edit_menu"):
             self._populate_edit_menu()
@@ -1106,6 +1339,7 @@ class ThinkTrellisApp:
             self.selected_badge.configure(text="Ideia principal")
         self.refresh_tree()
         self.canvas.redraw()
+        self._refresh_swatches()
         self.status_var.set(f"Selecionada: {node.text}")
         self._update_action_buttons()
         if focus_canvas:
@@ -1153,6 +1387,7 @@ class ThinkTrellisApp:
             node.color = color
             self.mark_changed("Cor da ideia atualizada — alterações não salvas")
             self.canvas.redraw()
+            self._refresh_swatches()
 
     def add_child(self) -> None:
         if self.map.map_type == "conceptual":
@@ -1224,7 +1459,7 @@ class ThinkTrellisApp:
         dialog.resizable(False, False)
         dialog.configure(bg=self.palette["bg"])
         dialog.transient(self.root)
-        dialog.grab_set()
+        self._grab_when_visible(dialog)
         self._relationship_dialog = dialog
 
         def close_dialog() -> None:
@@ -1479,27 +1714,25 @@ class ThinkTrellisApp:
     def show_map_type_dialog(self) -> None:
         dialog = tk.Toplevel(self.root)
         dialog.title("Escolha o tipo de mapa")
-        dialog.geometry("760x390")
-        dialog.minsize(680, 350)
+        dialog.geometry("700x360")
+        dialog.minsize(640, 330)
         dialog.configure(bg=self.palette["bg"])
         dialog.transient(self.root)
-        dialog.grab_set()
+        self._grab_when_visible(dialog)
 
-        header = ttk.Frame(dialog, style="Header.TFrame", padding=(24, 18))
-        header.pack(fill="x")
-        ttk.Label(header, text="Que tipo de mapa você quer criar?", style="Brand.TLabel").pack(anchor="w")
-        ttk.Label(header, text="Cada formato deixa os botões e a organização mais adequados ao seu objetivo.", style="Hint.TLabel").pack(anchor="w", pady=(5, 0))
-
-        choices = ttk.Frame(dialog, style="App.TFrame", padding=(22, 18))
+        container = ttk.Frame(dialog, style="App.TFrame", padding=(14, 12))
+        container.pack(fill="both", expand=True)
+        ttk.Label(container, text="Que tipo de mapa você quer criar?", style="Brand.TLabel").pack(anchor="w")
+        ttk.Label(container, text="Cada formato deixa os botões e a organização mais adequados ao seu objetivo.", style="Hint.TLabel").pack(anchor="w", pady=(4, 10))
+        choices = ttk.Frame(container, style="App.TFrame")
         choices.pack(fill="both", expand=True)
 
         def card(parent: tk.Misc, title: str, summary: str, points: str, action: str, map_type: str) -> None:
-            frame = ttk.Frame(parent, style="Panel.TFrame", padding=18)
-            frame.pack(side="left", fill="both", expand=True, padx=7)
-            ttk.Label(frame, text=title, style="Brand.TLabel").pack(anchor="w")
-            ttk.Label(frame, text=summary, style="Value.TLabel", wraplength=290).pack(anchor="w", pady=(8, 13))
-            ttk.Label(frame, text=points, style="Hint.TLabel", wraplength=290, justify="left").pack(anchor="w", fill="x", expand=True)
-            ttk.Button(frame, text=action, command=lambda: choose(map_type), style="Primary.TButton").pack(anchor="w", pady=(17, 0))
+            frame = self._group(parent, title)
+            frame.pack(side="left", fill="both", expand=True, padx=4)
+            ttk.Label(frame, text=summary, style="Value.TLabel", wraplength=280).pack(anchor="w", pady=(0, 8))
+            ttk.Label(frame, text=points, style="Hint.TLabel", wraplength=280, justify="left").pack(anchor="w", fill="x", expand=True)
+            ttk.Button(frame, text=action, command=lambda: choose(map_type), style="Primary.TButton").pack(anchor="w", pady=(10, 0))
 
         def choose(map_type: str) -> None:
             dialog.destroy()
@@ -1758,10 +1991,11 @@ class ThinkTrellisApp:
             left, top = to_pdf(x1, y1)
             right, bottom = to_pdf(x2, y2)
             width, height = right - left, top - bottom
+            text_color = HexColor(readable_text_color(node.color))
             page.setFillColor(HexColor(_safe_hex_color(node.color)))
-            page.setStrokeColor(HexColor(_safe_hex_color(node.color)))
-            page.roundRect(left, bottom, width, height, max(5, min(12, 12 * scale)), fill=1, stroke=1)
-            page.setFillColor(HexColor("#FFFFFF"))
+            page.setStrokeColor(HexColor("#404040"))
+            page.roundRect(left, bottom, width, height, 2, fill=1, stroke=1)
+            page.setFillColor(text_color)
             lines = wrap_label(node.text)
             font_size = max(6.5, min(11.5, 10.5 * scale))
             line_gap = font_size * 1.25
@@ -1770,7 +2004,7 @@ class ThinkTrellisApp:
             for index, line in enumerate(lines):
                 page.drawCentredString((left + right) / 2, first_y - index * line_gap, _pdf_display_text(line))
             if node.note.strip():
-                page.setFillColor(HexColor("#FFFFFF"))
+                page.setFillColor(text_color)
                 page.circle(right - max(4, 8 * scale), top - max(4, 8 * scale), max(1.5, 2.4 * scale), fill=1, stroke=0)
 
         page.save()
@@ -1848,7 +2082,8 @@ class ThinkTrellisApp:
             line_gap = font_size * 1.25
             text_lines = wrap_label(node.text)
             first_y = (top + bottom) / 2 + (len(text_lines) - 1) * line_gap / 2 - font_size * 0.34
-            lines.append("1 1 1 rg")
+            text_rgb = _pdf_color(readable_text_color(node.color))
+            lines.append(f"{text_rgb[0]:.3f} {text_rgb[1]:.3f} {text_rgb[2]:.3f} rg")
             for index, text_line in enumerate(text_lines):
                 literal = _pdf_literal(text_line)
                 text_x = (left + right) / 2 - _pdf_text_width(literal, font_size) / 2
@@ -1901,7 +2136,7 @@ class ThinkTrellisApp:
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}" height="{height:.0f}" viewBox="0 0 {width:.0f} {height:.0f}">',
             f'<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="{p["connection"]}"/></marker></defs>',
             f'<rect width="100%" height="100%" fill="{p["canvas"]}"/>',
-            '<g font-family="Segoe UI, Arial, sans-serif">',
+            '<g font-family="Tahoma, Segoe UI, Arial, sans-serif">',
         ]
         if self.map.map_type == "mind":
             for node in nodes:
@@ -1929,16 +2164,17 @@ class ThinkTrellisApp:
         for node in nodes:
             x1, y1, x2, y2 = self.canvas.world_box(node)
             w, h = x2 - x1, y2 - y1
-            pieces.append(f'<rect x="{x1 + tx:.1f}" y="{y1 + ty:.1f}" width="{w:.1f}" height="{h:.1f}" rx="16" fill="{node.color}"/>')
+            text_color = readable_text_color(node.color)
+            pieces.append(f'<rect x="{x1 + tx:.1f}" y="{y1 + ty:.1f}" width="{w:.1f}" height="{h:.1f}" rx="2" fill="{node.color}" stroke="#404040" stroke-width="1"/>')
             lines = wrap_label(node.text)
             start_y = node.y + ty - ((len(lines) - 1) * 9)
-            pieces.append(f'<text x="{node.x + tx:.1f}" y="{start_y:.1f}" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="700">')
+            pieces.append(f'<text x="{node.x + tx:.1f}" y="{start_y:.1f}" text-anchor="middle" fill="{text_color}" font-size="14" font-weight="700">')
             for index, line in enumerate(lines):
                 dy = "0" if index == 0 else "18"
                 pieces.append(f'<tspan x="{node.x + tx:.1f}" dy="{dy}">{html.escape(line)}</tspan>')
             pieces.append("</text>")
             if node.note.strip():
-                pieces.append(f'<circle cx="{x2 + tx - 16:.1f}" cy="{y1 + ty + 16:.1f}" r="4" fill="#FFFFFF" opacity="0.95"/>')
+                pieces.append(f'<circle cx="{x2 + tx - 16:.1f}" cy="{y1 + ty + 16:.1f}" r="4" fill="{text_color}" opacity="0.95"/>')
         pieces.extend(["</g>", "</svg>"])
         return "\n".join(pieces)
 
@@ -1993,10 +2229,9 @@ class ThinkTrellisApp:
         window.destroy()
 
     def _help_text(self, master: tk.Misc, contents: str) -> ScrolledText:
-        text = ScrolledText(master, wrap="word", relief="flat", borderwidth=0, font=("Segoe UI", 11), padx=18, pady=16)
+        text = self._make_text(master, wrap="word")
+        text.configure(padx=14, pady=10)
         text.pack(fill="both", expand=True)
-        p = self.palette
-        text.configure(bg=p["surface"], fg=p["text"], insertbackground=p["text"], selectbackground=p["primary"], selectforeground="#FFFFFF")
         text.insert("1.0", contents)
         text.configure(state="disabled")
         return text
@@ -2047,7 +2282,7 @@ O {APP_NAME} também abre mapas antigos do NexMind com extensão .nexmind.
 
 DESFAZER
 
-Se algo saiu errado, clique em “↶ Desfazer” no alto da janela. Também é possível usar Ctrl+Z com o mapa ou a área de estrutura selecionados. Enquanto você estiver escrevendo em um campo, Ctrl+Z continua reservado ao próprio texto.
+Se algo saiu errado, clique em “Desfazer” no alto da janela. Também é possível usar Ctrl+Z com o mapa ou a área de estrutura selecionados. Enquanto você estiver escrevendo em um campo, Ctrl+Z continua reservado ao próprio texto.
 
 ATALHOS OPCIONAIS
 
@@ -2103,6 +2338,49 @@ Créditos
             return
         self._write_preferences()
         self.root.destroy()
+
+    def smoke_test(self) -> None:
+        """Abre a janela, desenha os dois tipos de mapa, troca de visual e exporta.
+
+        Serve para conferir, sem ninguém clicando, que o programa (inclusive o
+        executável gerado) inicia e desenha direito. Erros que o Tk normalmente
+        só imprime dentro de eventos também fazem o teste falhar.
+        """
+        errors: list[str] = []
+
+        def collect(exc_type, exc_value, exc_traceback) -> None:
+            errors.append("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+
+        self.root.report_callback_exception = collect
+        try:
+            self.root.update()
+            for map_type in ("mind", "conceptual"):
+                self._create_new_map(map_type)
+                if map_type == "mind":
+                    first = self.map.add_child(self.map.root_id, "Primeira ideia")
+                    self.map.add_child(first.id, "Detalhe")
+                    self.map.add_sibling(first.id, "Segunda ideia")
+                else:
+                    source = self.map.add_concept("Luz")
+                    target = self.map.add_concept("Prisma")
+                    self.map.add_relationship(source.id, target.id, "atravessa")
+                self.map.arrange()
+                self.refresh_tree()
+                self.select_node(self.map.root_id)
+                self.canvas.fit_map()
+                for theme_name in THEMES:
+                    self.apply_theme(theme_name, persist=False)
+                    self.root.update()
+            with tempfile.TemporaryDirectory() as folder:
+                target_folder = Path(folder)
+                (target_folder / "mapa.svg").write_text(self._build_svg(), encoding="utf-8")
+                (target_folder / "mapa.pdf").write_bytes(self._build_pdf())
+                self._write_pdf_with_reportlab(target_folder / "mapa-reportlab.pdf")
+            self.root.update()
+        finally:
+            self.root.destroy()
+        if errors:
+            raise RuntimeError("Erros dentro da interface:\n" + "\n".join(errors))
 
     def run(self) -> None:
         self.root.mainloop()
