@@ -26,8 +26,12 @@ class InterfaceSmokeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, mock.patch.dict(os.environ, {"THINKTRELLIS_DATA_DIR": folder}):
             try:
                 app = ThinkTrellisApp()
-            except tk.TclError as error:  # sem tela disponível
-                self.skipTest(f"Sem tela para abrir a janela: {error}")
+            except tk.TclError as error:
+                # Só pula quando realmente não há tela. Qualquer outro erro do
+                # Tk é um defeito da interface e precisa derrubar o teste.
+                if "display" in str(error).lower():
+                    self.skipTest(f"Sem tela para abrir a janela: {error}")
+                raise
             app.smoke_test()
 
 
