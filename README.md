@@ -27,6 +27,10 @@ No Windows, dê duplo clique em `ThinkTrellis.pyw` para abrir sem janela de term
 
 É necessário Python 3.10 ou superior com Tkinter disponível. Quem receber o executável não precisa instalar Python, Node.js, Electron nem dependências extras.
 
+## Versão web
+
+`web/index.html` é uma versão simplificada que roda no navegador, em um único arquivo e sem internet: basta abri-lo com duplo clique (ou publicá-lo no GitHub Pages). Cria mapas mentais e conceituais, abre e salva arquivos `.thinktrellis` (compatíveis com o aplicativo), exporta SVG, tem desfazer, tema claro/escuro e salva automaticamente no navegador. Não inclui exportação em PDF nem a recuperação de rascunho do aplicativo.
+
 ## Criar o executável Windows
 
 Em um computador de desenvolvimento com Python, execute:
