@@ -23,7 +23,13 @@ O projeto usa somente Python com Tkinter na execução.
 python main.py
 ```
 
+No Windows, dê duplo clique em `ThinkTrellis.pyw` para abrir sem janela de terminal.
+
 É necessário Python 3.10 ou superior com Tkinter disponível. Quem receber o executável não precisa instalar Python, Node.js, Electron nem dependências extras.
+
+## Versão web
+
+`web/index.html` é uma versão simplificada que roda no navegador, em um único arquivo e sem internet: basta abri-lo com duplo clique (ou publicá-lo no GitHub Pages). Cria mapas mentais e conceituais, abre e salva arquivos `.thinktrellis` (compatíveis com o aplicativo), exporta SVG, tem desfazer, tema claro/escuro e salva automaticamente no navegador. Não inclui exportação em PDF nem a recuperação de rascunho do aplicativo.
 
 ## Criar o executável Windows
 
@@ -34,6 +40,20 @@ build_windows.bat
 ```
 
 O resultado será `dist\ThinkTrellis.exe`, com a logo aplicada ao executável e à janela.
+
+## Criar o executável Linux
+
+Com Python e Tkinter instalados (`python3-tk` no Debian/Ubuntu):
+
+```bash
+./build_linux.sh
+```
+
+O resultado será `dist/ThinkTrellis`.
+
+## Downloads automáticos (GitHub Actions)
+
+A cada envio para `main` e a cada pull request, o workflow **Build ThinkTrellis** roda os testes e gera os executáveis de Windows (`ThinkTrellis.exe`) e Linux (`ThinkTrellis-linux.tar.gz`), disponíveis em *Actions → execução → Artifacts*. Ao criar uma tag `v*` (por exemplo `v1.0.1`), os dois arquivos também são anexados a uma Release.
 
 ## Testes
 

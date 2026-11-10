@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/png;base64,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">
+<title>ThinkTrellis Web</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: barra de título e de ações no alto; guia/estrutura | mapa | detalhes.
+   No celular os três painéis viram abas na parte de baixo. */
+:root {
+  --bg: #F3F6FB; --panel: #FFFFFF; --field: #FFFFFF; --canvas: #FBFCFE; --grid: #E9EEF6;
+  --line: #D3DBE8; --text: #1B2438; --muted: #5B6880; --disabled: #9AA5B8;
+  --accent: #2563EB; --accent-hover: #1D4ED8; --accent-soft: #E3ECFE; --accent-ink: #1D4ED8; --accent-text: #FFFFFF;
+  --danger: #C0343F; --conn: #9AABC4; --shade: rgba(27, 36, 56, .14);
+  --font: "Segoe UI", Inter, Roboto, "Noto Sans", Ubuntu, Cantarell, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C121F; --panel: #141C2E; --field: #0F1626; --canvas: #0E1524; --grid: #18223A;
+    --line: #2B3852; --text: #F3F6FC; --muted: #9FB0CB; --disabled: #5F6E88;
+    --accent: #2563EB; --accent-hover: #3B82F6; --accent-soft: #1E3A6E; --accent-ink: #DCE8FF; --accent-text: #FFFFFF;
+    --danger: #FF8A93; --conn: #566B92; --shade: rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C121F; --panel: #141C2E; --field: #0F1626; --canvas: #0E1524; --grid: #18223A;
+  --line: #2B3852; --text: #F3F6FC; --muted: #9FB0CB; --disabled: #5F6E88;
+  --accent: #2563EB; --accent-hover: #3B82F6; --accent-soft: #1E3A6E; --accent-ink: #DCE8FF; --accent-text: #FFFFFF;
+  --danger: #FF8A93; --conn: #566B92; --shade: rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 var(--font);
+  display: flex; flex-direction: column; overflow: hidden;
+  padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- barras ---------- */
+.top, .actions { display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: var(--panel); }
+.top { border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+.brand img { width: 28px; height: 28px; display: block; }
+.badge { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; font-size: 12px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.title-input { flex: 1 1 180px; min-width: 0; font-weight: 600; font-size: 15px; }
+.spacer { flex: 1 1 0; }
+.actions { border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; }
+.actions > * { flex: 0 0 auto; }
+.sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+
+/* ---------- controles ---------- */
+.btn {
+  background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; min-height: 34px; white-space: nowrap;
+  transition: background .12s, border-color .12s;
+}
+.btn:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
+.btn:disabled { color: var(--disabled); cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn.danger { color: var(--danger); }
+.btn.icon { min-width: 34px; padding: 6px 8px; }
+.btn.block { width: 100%; }
+input[type=text], textarea, select {
+  background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; min-width: 0;
+}
+input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea { resize: vertical; min-height: 84px; }
+label.field { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 4px; }
+
+.menu-wrap { position: relative; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 220px; padding: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px var(--shade);
+}
+.menu button { display: flex; width: 100%; justify-content: space-between; gap: 16px; text-align: left; background: none; border: 0; border-radius: 6px; padding: 8px 10px; }
+.menu button:hover { background: var(--accent-soft); }
+.menu kbd { color: var(--muted); font: 12px var(--font); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 0; }
+
+/* ---------- área de trabalho ---------- */
+.work { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: 252px minmax(0, 1fr) 280px; gap: 12px; padding: 12px 16px; }
+.side, .stage { min-height: 0; min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.card h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.card.grow { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; }
+.hint { color: var(--muted); font-size: 12.5px; }
+.steps { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+.steps .n { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-text); font-weight: 700; font-size: 12px; display: grid; place-items: center; }
+.steps b { display: block; font-size: 13px; }
+.steps span { color: var(--muted); font-size: 12.5px; }
+
+.tree { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1 1 auto; min-height: 0; }
+.tree li { display: flex; align-items: center; }
+.tree .row { flex: 1; min-width: 0; text-align: left; background: none; border: 0; border-radius: 6px; padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree .row:hover { background: var(--accent-soft); }
+.tree .row.sel { background: var(--accent); color: var(--accent-text); }
+.tree .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 8px; vertical-align: -1px; border: 1px solid var(--line); }
+.tree .tog { width: 22px; flex: none; background: none; border: 0; color: var(--muted); padding: 0; }
+
+.stage { display: flex; flex-direction: column; gap: 6px; }
+.canvas-wrap { flex: 1 1 0; min-height: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--canvas); position: relative; }
+#map { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#map:active { cursor: grabbing; }
+#map:focus-visible { outline-offset: -3px; }
+.node { cursor: pointer; }
+.node .nshadow { fill: var(--shade); }
+.node .ring { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0; }
+.node.sel .ring { opacity: 1; }
+.node:hover:not(.sel) .ring { opacity: 1; stroke: var(--conn); stroke-width: 2; }
+.node text { font-weight: 700; pointer-events: none; }
+.edge { fill: none; stroke: var(--conn); stroke-width: 2; stroke-linecap: round; }
+.rel-label { font-size: 11px; font-weight: 700; fill: var(--text); }
+.rel-box { fill: var(--canvas); stroke: var(--line); }
+.empty-hint { fill: var(--muted); font-size: 13px; text-anchor: middle; }
+.zoom { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.zoom output { min-width: 46px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stage-hint { padding: 0 2px; }
+
+.swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.sw { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line); padding: 0; }
+.sw[aria-pressed=true] { outline: 3px solid var(--accent); outline-offset: 2px; }
+.selected-name { background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; border-radius: 8px; padding: 7px 10px; overflow-wrap: anywhere; }
+.stack { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.rels { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rels li { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 6px; }
+.rels .who { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.rels .line { display: flex; gap: 6px; }
+
+.statusbar { display: flex; gap: 12px; justify-content: space-between; padding: 6px 16px; border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12.5px; }
+.statusbar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabs { display: none; }
+
+dialog { border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: var(--panel); color: var(--text); width: min(460px, calc(100vw - 32px)); box-shadow: 0 20px 60px var(--shade); }
+dialog::backdrop { background: rgba(10, 16, 29, .5); }
+dialog h3 { margin: 0 0 4px; font-size: 17px; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.choice { text-align: left; background: var(--field); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.choice:hover { border-color: var(--accent); background: var(--accent-soft); }
+.choice b { font-size: 15px; }
+.choice span { color: var(--muted); font-size: 12.5px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 50;
+  background: var(--text); color: var(--bg); border-radius: 10px; padding: 9px 14px; display: flex; gap: 14px; align-items: center;
+  box-shadow: 0 8px 24px var(--shade); max-width: calc(100vw - 32px);
+}
+.toast button { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; padding: 0; }
+.dropzone { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(37, 99, 235, .18); border: 3px dashed var(--accent); font-size: 20px; font-weight: 700; color: var(--accent-ink); backdrop-filter: blur(2px); }
+
+@media (max-width: 899px) {
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .work { grid-template-columns: minmax(0, 1fr); padding: 8px 16px; }
+  .work > * { display: none; }
+  body[data-pane="map"] .stage, body[data-pane="struct"] .side.left, body[data-pane="detail"] .side.right { display: flex; }
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); background: var(--panel); }
+  .tabs button { background: none; border: 0; padding: 12px 4px; color: var(--muted); font-weight: 600; border-top: 3px solid transparent; }
+  .tabs button[aria-selected=true] { color: var(--accent-ink); border-top-color: var(--accent); }
+  .statusbar { display: none; }
+  .toast { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .brand span.name { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><img alt="" src="data:image/png;base64,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"><span class="name">ThinkTrellis</span></div>
+  <span class="badge" id="typeBadge">Mapa mental</span>
+  <input type="text" class="title-input" id="mapTitle" aria-label="Nome do mapa" maxlength="120" autocomplete="off">
+  <div class="menu-wrap">
+    <button class="btn" id="fileBtn" aria-haspopup="true" aria-expanded="false">Arquivo ▾</button>
+    <div class="menu" id="fileMenu" role="menu" hidden>
+      <button role="menuitem" data-cmd="new">Novo mapa…</button>
+      <button role="menuitem" data-cmd="open">Abrir mapa… <kbd>Ctrl+O</kbd></button>
+      <hr>
+      <button role="menuitem" data-cmd="save">Salvar no computador <kbd>Ctrl+S</kbd></button>
+      <button role="menuitem" data-cmd="svg">Exportar como SVG</button>
+      <hr>
+      <button role="menuitem" data-cmd="about">Sobre o ThinkTrellis</button>
+    </div>
+  </div>
+  <button class="btn icon" id="themeBtn" title="Alternar tema claro e escuro" aria-label="Alternar tema claro e escuro"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="display:block"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
+</header>
+
+<div class="actions" id="actions">
+  <button class="btn primary" id="act2">+ Subideia</button>
+  <button class="btn" id="act1">+ Outra ideia</button>
+  <div class="sep"></div>
+  <button class="btn" id="organizeBtn">Organizar</button>
+  <button class="btn" id="undoBtn">Desfazer</button>
+  <div class="zoom">
+    <button class="btn icon" id="zoomOut" aria-label="Afastar">−</button>
+    <output id="zoomLabel" aria-live="off">100%</output>
+    <button class="btn icon" id="zoomIn" aria-label="Aproximar">+</button>
+    <button class="btn" id="fitBtn">Ajustar</button>
+  </div>
+</div>
+
+<main class="work">
+  <aside class="side left">
+    <section class="card" id="guide">
+      <h2>Como usar</h2>
+      <div class="hint" id="intro"></div>
+      <ol class="steps" id="steps"></ol>
+    </section>
+    <section class="card grow">
+      <h2 id="treeTitle">Estrutura do mapa</h2>
+      <ul class="tree" id="tree"></ul>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <div class="hint stage-hint" id="canvasHint"></div>
+    <div class="canvas-wrap"><svg id="map" tabindex="0" role="application" aria-label="Mapa"></svg></div>
+  </section>
+
+  <aside class="side right">
+    <section class="card">
+      <h2 id="detailTitle">Detalhes da ideia</h2>
+      <div class="selected-name" id="selName"></div>
+      <label class="field" for="fTitle">Título</label>
+      <input type="text" id="fTitle" autocomplete="off" maxlength="300">
+      <label class="field" id="parentLabel" for="parentVal">Conectada a</label>
+      <div id="parentVal"></div>
+      <ul class="rels" id="rels"></ul>
+      <label class="field" for="fNote">Nota (opcional)</label>
+      <textarea id="fNote" maxlength="4000"></textarea>
+      <label class="field" id="colorLabel">Cor</label>
+      <div class="swatches" id="swatches" role="group" aria-labelledby="colorLabel"></div>
+      <div class="stack">
+        <button class="btn block" id="collapseBtn">Recolher / expandir</button>
+        <button class="btn block danger" id="deleteBtn">Apagar ideia</button>
+      </div>
+      <p class="hint" id="tip" style="margin:14px 0 0"></p>
+    </section>
+  </aside>
+</main>
+
+<nav class="tabs" role="tablist" aria-label="Painéis">
+  <button role="tab" data-pane="map" aria-selected="true">Mapa</button>
+  <button role="tab" data-pane="struct" aria-selected="false">Guia</button>
+  <button role="tab" data-pane="detail" aria-selected="false">Detalhes</button>
+</nav>
+<footer class="statusbar"><span id="status">Pronto.</span><span>Salvo automaticamente neste navegador • Arquivos .thinktrellis</span></footer>
+
+<dialog id="dlgType">
+  <h3>Que tipo de mapa você quer criar?</h3>
+  <div class="hint">Cada formato deixa os botões e a organização mais adequados ao seu objetivo.</div>
+  <div class="choices">
+    <button class="choice" data-type="mind"><b>Mapa mental</b><span>Uma ideia central com ramos e subideias.</span></button>
+    <button class="choice" data-type="conceptual"><b>Mapa conceitual</b><span>Conceitos ligados por setas com uma frase.</span></button>
+  </div>
+  <div class="dlg-actions"><button class="btn" id="typeCancel">Cancelar</button></div>
+</dialog>
+
+<dialog id="dlgLink">
+  <h3>Conectar conceitos</h3>
+  <div class="hint">A leitura será: origem → relação → destino.</div>
+  <label class="field" for="lkFrom">De onde a seta sai</label>
+  <select id="lkFrom"></select>
+  <label class="field" for="lkLabel">Frase da seta</label>
+  <input type="text" id="lkLabel" value="relaciona-se com" autocomplete="off" maxlength="80">
+  <label class="field" for="lkTo">Para onde ela vai</label>
+  <select id="lkTo"></select>
+  <div class="dlg-actions">
+    <button class="btn" id="lkCancel">Cancelar</button>
+    <button class="btn primary" id="lkOk">Criar ligação</button>
+  </div>
+</dialog>
+
+<dialog id="dlgAbout">
+  <h3>ThinkTrellis Web</h3>
+  <p class="hint">Versão simples do editor de mapas mentais e conceituais, direto no navegador. Funciona offline e abre os arquivos <b>.thinktrellis</b> do aplicativo.</p>
+  <p class="hint">Não inclui: exportação em PDF, manual completo e arquivos recuperáveis do app.</p>
+  <p class="hint">© 2026 Pixel Shell. Todos os direitos reservados.<br>Desenvolvido por Natan Gabriel.</p>
+  <div class="dlg-actions"><button class="btn primary" id="aboutOk">Fechar</button></div>
+</dialog>
+
+<input type="file" id="filePick" accept=".thinktrellis,.nexmind,.json,application/json" hidden>
+<div class="toast" id="toast" hidden role="status"></div>
+<div class="dropzone" id="drop" hidden>Solte o arquivo .thinktrellis aqui</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (id) => document.getElementById(id);
+const COLORS = ['#3B82F6', '#8B5CF6', '#EC4899', '#F97316', '#10B981', '#14B8A6', '#EAB308', '#64748B'];
+const KEY = 'thinktrellis-web:v1';
+const THEME_KEY = 'thinktrellis-web:theme';
+const H_SPACING = 280, V_SPACING = 108;
+const svg = $('map');
+
+/* ---------- utilidades ---------- */
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function newId() { const a = new Uint8Array(6); crypto.getRandomValues(a); return [...a].map((b) => b.toString(16).padStart(2, '0')).join(''); }
+function safeColor(c, d = '#3B82F6') { return /^#[0-9a-fA-F]{6}$/.test(String(c).trim()) ? String(c).trim().toUpperCase() : d; }
+function lum(hex) {
+  const v = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+function textOn(bg) { return (1.05 / (lum(safeColor(bg)) + 0.05)) >= 3.5 ? '#FFFFFF' : '#000000'; }
+function store(fn) { try { return fn(); } catch (e) { return null; } }
+function wrapLabel(text, width = 21) {
+  const out = [];
+  for (const para of String(text).split(/\r?\n/)) {
+    const words = para.split(/\s+/).filter(Boolean);
+    if (!words.length) { out.push(''); continue; }
+    let line = '';
+    for (let w of words) {
+      while (w.length > width) { if (line) { out.push(line); line = ''; } out.push(w.slice(0, width)); w = w.slice(width); }
+      if (!line) line = w; else if ((line + ' ' + w).length <= width) line += ' ' + w; else { out.push(line); line = w; }
+    }
+    if (line) out.push(line);
+  }
+  return out.slice(0, 4);
+}
+
+/* ---------- modelo (mesmo formato do aplicativo) ---------- */
+let map, selectedId, view = { x: 0, y: 0, k: 1 };
+let undoStack = [];
+
+function newNode(text, x, y, color, parentId = null) { return { id: newId(), text, x, y, color, note: '', parentId, collapsed: false }; }
+function newMap(type, title = 'Novo mapa') {
+  const root = newNode(type === 'mind' ? 'Ideia principal' : 'Conceito central', 0, 0, '#2563EB');
+  return { title, mapType: type, rootId: root.id, nodes: { [root.id]: root }, rels: {} };
+}
+const nodes = () => Object.values(map.nodes);
+const root = () => map.nodes[map.rootId];
+const children = (id) => nodes().filter((n) => n.parentId === id);
+function descendants(id) { const r = []; for (const c of children(id)) { r.push(c, ...descendants(c.id)); } return r; }
+function visibleNodes() {
+  return nodes().filter((n) => { let c = n; while (c.parentId) { const p = map.nodes[c.parentId]; if (p.collapsed) return false; c = p; } return true; });
+}
+function relsFor(id) { return Object.values(map.rels).filter((r) => r.sourceId === id || r.targetId === id); }
+
+function addChild(parentId, text = 'Nova ideia') {
+  const parent = map.nodes[parentId], sibs = children(parentId);
+  const dir = parentId === map.rootId && sibs.length % 2 === 0 ? 1 : (parent.x >= 0 ? 1 : -1);
+  const n = newNode(text, parent.x + dir * H_SPACING, parent.y + (sibs.length - 0.5) * V_SPACING, COLORS[(nodes().length - 1) % COLORS.length], parentId);
+  map.nodes[n.id] = n; return n;
+}
+function addSibling(id) { const n = map.nodes[id]; const s = addChild(n.parentId); s.color = n.color; return s; }
+function addConcept(text = 'Novo conceito') {
+  const pos = nodes().length - 1;
+  const n = newNode(text, ((pos % 3) - 1) * 280, 160 + Math.floor(pos / 3) * 150, COLORS[pos % COLORS.length]);
+  map.nodes[n.id] = n; return n;
+}
+function addRelationship(src, dst, label) {
+  const clean = label.trim() || 'relaciona-se com';
+  for (const r of Object.values(map.rels)) if (r.sourceId === src && r.targetId === dst) { r.label = clean; return r; }
+  const r = { id: newId(), sourceId: src, targetId: dst, label: clean }; map.rels[r.id] = r; return r;
+}
+function deleteBranch(id) {
+  const gone = [id, ...descendants(id).map((n) => n.id)];
+  gone.forEach((g) => delete map.nodes[g]);
+  for (const [rid, r] of Object.entries(map.rels)) if (gone.includes(r.sourceId) || gone.includes(r.targetId)) delete map.rels[rid];
+}
+function leafCount(id) { const n = map.nodes[id], ch = children(id); return n.collapsed || !ch.length ? 1 : ch.reduce((a, c) => a + leafCount(c.id), 0); }
+function arrangeBranch(id, depth, dir, cursor) {
+  const n = map.nodes[id]; n.x = dir * depth * H_SPACING;
+  const ch = n.collapsed ? [] : children(id);
+  if (!ch.length) { n.y = cursor; return cursor + V_SPACING; }
+  const ys = [];
+  for (const c of ch) { cursor = arrangeBranch(c.id, depth + 1, dir, cursor); ys.push(c.y); }
+  n.y = ys.reduce((a, b) => a + b, 0) / ys.length; return cursor;
+}
+function arrange() {
+  const r = root();
+  if (map.mapType === 'conceptual') {
+    r.x = 0; r.y = -180;
+    const others = nodes().filter((n) => n.id !== r.id), cols = Math.min(3, Math.max(1, others.length));
+    others.forEach((c, i) => { c.x = ((i % cols) - (cols - 1) / 2) * 290; c.y = 60 + Math.floor(i / cols) * 155; });
+    return;
+  }
+  r.x = 0; r.y = 0;
+  const direct = children(r.id);
+  [[direct.filter((_, i) => i % 2 === 1), -1], [direct.filter((_, i) => i % 2 === 0), 1]].forEach(([roots, dir]) => {
+    if (!roots.length) return;
+    let cursor = -((roots.reduce((a, n) => a + leafCount(n.id), 0) - 1) * V_SPACING) / 2;
+    roots.forEach((n) => { cursor = arrangeBranch(n.id, 1, dir, cursor); });
+  });
+}
+
+/* ---------- arquivo ---------- */
+function toPayload() {
+  return {
+    app: 'ThinkTrellis', app_version: '1.0', format_version: 3, title: map.title, theme: currentTheme(), map_type: map.mapType, root_id: map.rootId,
+    nodes: nodes().map((n) => ({ id: n.id, text: n.text, x: n.x, y: n.y, color: n.color, note: n.note, parent_id: n.parentId, collapsed: n.collapsed })),
+    relationships: Object.values(map.rels).map((r) => ({ id: r.id, source_id: r.sourceId, target_id: r.targetId, label: r.label })),
+  };
+}
+function fromPayload(p) {
+  const bad = (m) => { throw new Error(m); };
+  if (!p || typeof p !== 'object' || Array.isArray(p)) bad('O arquivo não parece ser um mapa ThinkTrellis.');
+  if (p.app != null && !['ThinkTrellis', 'NexMind'].includes(p.app)) bad('Este arquivo foi criado por outro aplicativo.');
+  if (!Array.isArray(p.nodes)) bad('O arquivo não contém uma lista de ideias válida.');
+  const type = String(p.map_type || 'mind');
+  if (!['mind', 'conceptual'].includes(type)) bad('O arquivo usa um tipo de mapa não reconhecido.');
+  const m = { title: String(p.title || 'Mapa sem título').trim() || 'Novo mapa', mapType: type, rootId: String(p.root_id || ''), nodes: {}, rels: {} };
+  for (const v of p.nodes) {
+    if (!v || typeof v !== 'object' || v.id == null) bad('Um item do mapa está incompleto.');
+    const id = String(v.id); if (m.nodes[id]) bad('O arquivo contém IDs de ideias duplicados.');
+    const x = Number(v.x ?? 0), y = Number(v.y ?? 0); if (!Number.isFinite(x) || !Number.isFinite(y)) bad('Um item do mapa está incompleto.');
+    m.nodes[id] = { id, text: String(v.text ?? 'Ideia sem nome').trim() || 'Ideia sem nome', x, y, color: safeColor(v.color), note: String(v.note ?? ''), parentId: v.parent_id ? String(v.parent_id) : null, collapsed: !!v.collapsed };
+  }
+  if (!m.nodes[m.rootId]) bad('A ideia principal não foi encontrada.');
+  if (m.nodes[m.rootId].parentId) bad('A ideia principal não pode ter uma ideia acima dela.');
+  for (const n of Object.values(m.nodes)) {
+    if (n.id !== m.rootId && n.parentId && !m.nodes[n.parentId]) bad('Uma ideia aponta para uma ideia pai inexistente.');
+    if (m.mapType === 'mind' && n.id !== m.rootId && !n.parentId) bad('Uma ideia do mapa mental não possui uma ideia acima dela.');
+    let c = n; const seen = new Set();
+    while (c.parentId) { if (seen.has(c.id)) bad('O mapa contém uma conexão circular.'); seen.add(c.id); c = m.nodes[c.parentId]; }
+  }
+  for (const v of (Array.isArray(p.relationships) ? p.relationships : [])) {
+    if (!v || v.id == null || v.source_id == null || v.target_id == null) bad('Uma relação conceitual está incompleta.');
+    const r = { id: String(v.id), sourceId: String(v.source_id), targetId: String(v.target_id), label: String(v.label || '').trim() || 'relaciona-se com' };
+    if (!m.nodes[r.sourceId] || !m.nodes[r.targetId]) bad('Uma relação conceitual aponta para um conceito inexistente.');
+    if (r.sourceId === r.targetId) bad('Um conceito não pode apontar para ele mesmo.');
+    m.rels[r.id] = r;
+  }
+  return m;
+}
+function download(name, text, mime) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+const fileName = (ext) => (map.title.replace(/[\\/:*?"<>|]+/g, ' ').trim().replace(/\s+/g, '-') || 'mapa') + ext;
+function saveFile() { download(fileName('.thinktrellis'), JSON.stringify(toPayload(), null, 2), 'application/json'); status('Arquivo ' + fileName('.thinktrellis') + ' enviado para os seus downloads.'); }
+
+/* ---------- desfazer e salvamento automático ---------- */
+function snap() { return { map: clone(map), sel: selectedId }; }
+function pushUndo(s) { undoStack.push(s || snap()); if (undoStack.length > 100) undoStack.shift(); updateUndo(); }
+function undo() {
+  const s = undoStack.pop(); if (!s) return;
+  map = s.map; selectedId = map.nodes[s.sel] ? s.sel : map.rootId; updateUndo(); renderAll(); persist(); status('Ação desfeita.');
+}
+function updateUndo() { $('undoBtn').disabled = !undoStack.length; }
+let saveTimer = 0;
+function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => store(() => localStorage.setItem(KEY, JSON.stringify(toPayload()))), 300); }
+function changed(msg) { persist(); if (msg) status(msg); }
+function mutate(fn, msg) { pushUndo(); fn(); renderAll(); changed(msg); }
+
+/* ---------- mensagens ---------- */
+let toastTimer = 0;
+function status(t) { $('status').textContent = t; }
+function toast(text, actionLabel, action) {
+  const el = $('toast'); el.textContent = text + ' ';
+  if (actionLabel) { const b = document.createElement('button'); b.textContent = actionLabel; b.onclick = () => { action(); el.hidden = true; }; el.appendChild(b); }
+  el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 5000); status(text);
+}
+
+/* ---------- geometria ---------- */
+function dims(n) { const lines = wrapLabel(n.text); return [n.id === map.rootId ? 220 : 190, Math.max(66, Math.min(120, 38 + lines.length * 18))]; }
+function box(n) { const [w, h] = dims(n); return [n.x - w / 2, n.y - h / 2, n.x + w / 2, n.y + h / 2]; }
+function endpoints(a, b) {
+  const A = box(a), B = box(b), dx = b.x - a.x, dy = b.y - a.y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? [[A[2], (A[1] + A[3]) / 2], [B[0], (B[1] + B[3]) / 2]] : [[A[0], (A[1] + A[3]) / 2], [B[2], (B[1] + B[3]) / 2]];
+  return dy >= 0 ? [[(A[0] + A[2]) / 2, A[3]], [(B[0] + B[2]) / 2, B[1]]] : [[(A[0] + A[2]) / 2, A[1]], [(B[0] + B[2]) / 2, B[3]]];
+}
+
+/* ---------- desenho do mapa ---------- */
+function nodeSvg(n) {
+  const [x1, y1, x2, y2] = box(n), cx = (x1 + x2) / 2, cy = (y1 + y2) / 2, color = safeColor(n.color), ink = textOn(color);
+  const lines = wrapLabel(n.text); if (n.note.trim()) lines[lines.length - 1] += ' •';
+  const top = cy - ((lines.length - 1) * 17) / 2;
+  const spans = lines.map((l, i) => `<tspan x="${cx}" y="${top + i * 17}">${esc(l) || '&#160;'}</tspan>`).join('');
+  const marker = n.collapsed && children(n.id).length
+    ? `<circle cx="${x2 - 14}" cy="${y1 + 14}" r="9" fill="#FFFFFF" stroke="var(--line)"/><text x="${x2 - 14}" y="${y1 + 14}" text-anchor="middle" dominant-baseline="central" fill="#1B2438" style="font-size:13px">+</text>` : '';
+  return `<g class="node${n.id === selectedId ? ' sel' : ''}" data-id="${n.id}">
+    <rect class="nshadow" x="${x1}" y="${y1 + 3}" width="${x2 - x1}" height="${y2 - y1}" rx="12"/>
+    <rect class="ring" x="${x1 - 4}" y="${y1 - 4}" width="${x2 - x1 + 8}" height="${y2 - y1 + 8}" rx="15"/>
+    <rect x="${x1}" y="${y1}" width="${x2 - x1}" height="${y2 - y1}" rx="12" fill="${color}" stroke="var(--line)"/>
+    <text text-anchor="middle" dominant-baseline="central" fill="${ink}" style="font-size:${n.id === map.rootId ? 14 : 13}px">${spans}</text>${marker}</g>`;
+}
+function edgeSvg(a, b) {
+  const [s, e] = endpoints(a, b);
+  if (Math.abs(b.x - a.x) >= Math.abs(b.y - a.y)) { const m = (s[0] + e[0]) / 2; return `<path class="edge" d="M${s[0]} ${s[1]} C${m} ${s[1]} ${m} ${e[1]} ${e[0]} ${e[1]}"/>`; }
+  const m = (s[1] + e[1]) / 2; return `<path class="edge" d="M${s[0]} ${s[1]} C${s[0]} ${m} ${e[0]} ${m} ${e[0]} ${e[1]}"/>`;
+}
+function relSvg(a, b, label) {
+  const [s, e] = endpoints(a, b), mx = (s[0] + e[0]) / 2, my = (s[1] + e[1]) / 2, w = label.length * 6.4 + 14;
+  return `<line class="edge" x1="${s[0]}" y1="${s[1]}" x2="${e[0]}" y2="${e[1]}" marker-end="url(#arrow)"/>
+    <rect class="rel-box" x="${mx - w / 2}" y="${my - 10}" width="${w}" height="20" rx="6"/><text class="rel-label" x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="central">${esc(label)}</text>`;
+}
+function renderCanvas() {
+  const W = svg.clientWidth, H = svg.clientHeight, vis = visibleNodes(), ids = new Set(vis.map((n) => n.id));
+  let edges = '';
+  if (map.mapType === 'mind') vis.forEach((n) => { if (n.parentId && ids.has(n.parentId)) edges += edgeSvg(map.nodes[n.parentId], n); });
+  else Object.values(map.rels).forEach((r) => { if (ids.has(r.sourceId) && ids.has(r.targetId)) edges += relSvg(map.nodes[r.sourceId], map.nodes[r.targetId], r.label); });
+  const sp = 48 * view.k;
+  const grid = sp >= 22 ? `<pattern id="grid" width="${sp}" height="${sp}" patternUnits="userSpaceOnUse" x="${view.x}" y="${view.y}"><path d="M${sp} 0H0V${sp}" fill="none" stroke="var(--grid)"/></pattern><rect width="100%" height="100%" fill="url(#grid)"/>` : '';
+  const hint = nodes().length === 1 ? `<text class="empty-hint" x="${W / 2}" y="${Math.min(H - 30, view.y + 96)}">${map.mapType === 'mind' ? 'Selecione “Ideia principal” e use + Subideia para começar.' : 'Selecione “Conceito central” e use + Conceito para começar.'}</text>` : '';
+  svg.innerHTML = `<defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--conn)"/></marker></defs>${grid}
+    <g transform="translate(${view.x} ${view.y}) scale(${view.k})">${edges}${vis.map(nodeSvg).join('')}</g>${hint}`;
+  $('zoomLabel').textContent = Math.round(view.k * 100) + '%';
+}
+function zoomBy(f, fx, fy) {
+  fx = fx ?? svg.clientWidth / 2; fy = fy ?? svg.clientHeight / 2;
+  const wx = (fx - view.x) / view.k, wy = (fy - view.y) / view.k;
+  view.k = Math.max(0.2, Math.min(2.4, view.k * f)); view.x = fx - wx * view.k; view.y = fy - wy * view.k; renderCanvas();
+}
+function centerOnRoot() { view.x = svg.clientWidth / 2 - root().x * view.k; view.y = svg.clientHeight / 2 - root().y * view.k; renderCanvas(); }
+function fitMap() {
+  const bs = visibleNodes().map(box); if (!bs.length) return;
+  const minX = Math.min(...bs.map((b) => b[0])) - 70, minY = Math.min(...bs.map((b) => b[1])) - 70, maxX = Math.max(...bs.map((b) => b[2])) + 70, maxY = Math.max(...bs.map((b) => b[3])) + 70;
+  const W = Math.max(300, svg.clientWidth), H = Math.max(250, svg.clientHeight);
+  view.k = Math.max(0.2, Math.min(1.55, Math.min((W - 50) / (maxX - minX), (H - 50) / (maxY - minY))));
+  view.x = W / 2 - ((minX + maxX) / 2) * view.k; view.y = H / 2 - ((minY + maxY) / 2) * view.k; renderCanvas();
+}
+
+/* ---------- painéis ---------- */
+const TEXT = {
+  mind: {
+    badge: 'Mapa mental', intro: 'Um mapa de cada vez, sem complicação.', treeTitle: 'Estrutura do mapa', detailTitle: 'Detalhes da ideia', parent: 'Conectada a',
+    hint: 'Clique para selecionar • Arraste caixas • Arraste o fundo para navegar', del: 'Apagar ideia', tip: 'Não precisa decorar atalhos: use os botões no alto da tela.',
+    steps: [['Escolha uma ideia', 'Clique na caixa que você quer desenvolver.'], ['Clique em + Subideia', 'Uma caixa nova aparece ligada à ideia escolhida.'], ['Dê um nome à nova caixa', 'Escreva em Detalhes. A mudança aparece na hora.']],
+  },
+  conceptual: {
+    badge: 'Mapa conceitual', intro: 'Crie caixas e explique como uma se relaciona com a outra.', treeTitle: 'Conceitos do mapa', detailTitle: 'Detalhes do conceito', parent: 'Relações',
+    hint: 'Clique para selecionar • Arraste as caixas • As setas mostram as relações', del: 'Apagar conceito', tip: 'Use os botões + Conceito e Conectar no alto da tela. Os atalhos são opcionais.',
+    steps: [['Crie os conceitos', 'Clique em + Conceito para colocar as caixas que você precisa.'], ['Clique em Conectar', 'Escolha a caixa de onde a seta sai e a caixa para onde ela vai.'], ['Escreva a frase da seta', 'Exemplo: “1 depende de 2”. Depois clique em Criar ligação.']],
+  },
+};
+function renderGuide() {
+  const t = TEXT[map.mapType];
+  $('typeBadge').textContent = t.badge; $('intro').textContent = t.intro; $('treeTitle').textContent = t.treeTitle; $('detailTitle').textContent = t.detailTitle;
+  $('canvasHint').textContent = t.hint; $('deleteBtn').textContent = t.del; $('tip').textContent = t.tip; $('parentLabel').textContent = t.parent;
+  $('steps').innerHTML = t.steps.map((s, i) => `<li><span class="n">${i + 1}</span><div><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div></li>`).join('');
+  const c = map.mapType === 'conceptual';
+  $('act2').textContent = c ? 'Conectar' : '+ Subideia'; $('act1').textContent = c ? '+ Conceito' : '+ Outra ideia';
+  $('collapseBtn').hidden = c; $('rels').hidden = c ? false : true; $('parentVal').hidden = c;
+  $('act2').classList.toggle('primary', true);
+  $('act1').disabled = !c && (selectedId === map.rootId);
+  document.title = (map.title || 'Novo mapa') + ' — ThinkTrellis';
+}
+function renderTree() {
+  const li = (n, depth, toggle) => {
+    const hasKids = map.mapType === 'mind' && children(n.id).length;
+    const tog = hasKids ? `<button class="tog" data-tog="${n.id}" aria-label="${n.collapsed ? 'Expandir' : 'Recolher'}">${n.collapsed ? '▸' : '▾'}</button>` : '<span class="tog"></span>';
+    return `<li style="padding-left:${depth * 14}px">${tog}<button class="row${n.id === selectedId ? ' sel' : ''}" data-id="${n.id}"><span class="dot" style="background:${safeColor(n.color)}"></span>${esc(n.text.replace(/\s+/g, ' '))}${n.note.trim() ? '  •' : ''}</button></li>`;
+  };
+  let out = '';
+  if (map.mapType === 'mind') { const walk = (n, d) => { out += li(n, d); if (!n.collapsed) children(n.id).forEach((c) => walk(c, d + 1)); }; walk(root(), 0); }
+  else { out += li(root(), 0); nodes().filter((n) => n.id !== map.rootId).sort((a, b) => a.text.localeCompare(b.text, 'pt', { sensitivity: 'base' })).forEach((n) => { out += li(n, 1); }); }
+  $('tree').innerHTML = out;
+}
+function renderInspector() {
+  const n = map.nodes[selectedId]; if (!n) return;
+  $('selName').textContent = n.text.replace(/\s+/g, ' ');
+  if (document.activeElement !== $('fTitle')) $('fTitle').value = n.text;
+  if (document.activeElement !== $('fNote')) $('fNote').value = n.note;
+  if (map.mapType === 'mind') $('parentVal').textContent = n.parentId ? map.nodes[n.parentId].text.replace(/\s+/g, ' ') : 'É a ideia principal';
+  else {
+    const rs = relsFor(n.id);
+    $('rels').innerHTML = rs.length ? rs.map((r) => `<li data-rel="${r.id}"><div class="who">${esc(map.nodes[r.sourceId].text)} → ${esc(map.nodes[r.targetId].text)}</div><div class="line"><input type="text" value="${esc(r.label)}" aria-label="Frase da seta" maxlength="80"><button class="btn danger icon" data-delrel="${r.id}" aria-label="Apagar ligação">✕</button></div></li>`).join('') : '<li class="hint" style="border:0;padding:0">Nenhuma relação ainda. Use Conectar no alto da tela.</li>';
+  }
+  const cur = safeColor(n.color);
+  $('swatches').innerHTML = COLORS.map((c) => `<button class="sw" data-color="${c}" style="background:${c}" aria-label="Cor ${c}" aria-pressed="${c === cur}"></button>`).join('');
+  $('collapseBtn').disabled = !children(n.id).length;
+  $('collapseBtn').textContent = n.collapsed ? 'Expandir ramo' : 'Recolher ramo';
+  $('deleteBtn').disabled = n.id === map.rootId;
+}
+function renderAll() { renderGuide(); renderTree(); renderCanvas(); renderInspector(); $('mapTitle').value !== map.title && document.activeElement !== $('mapTitle') && ($('mapTitle').value = map.title); updateUndo(); }
+
+/* ---------- ações ---------- */
+function select(id, focus) {
+  if (!map.nodes[id]) return; selectedId = id; renderGuide(); renderTree(); renderCanvas(); renderInspector();
+  if (focus && matchMedia('(min-width: 900px)').matches) { $('fTitle').focus(); $('fTitle').select(); }
+}
+function act_child() {
+  if (map.mapType === 'conceptual') return act_concept();
+  let created; mutate(() => { created = addChild(selectedId); selectedId = created.id; }, 'Subideia criada. Dê um nome a ela em Detalhes.');
+  ensureVisible(created); if (matchMedia('(min-width: 900px)').matches) { $('fTitle').focus(); $('fTitle').select(); }
+}
+function act_sibling() {
+  if (map.mapType === 'conceptual') return openLink();
+  if (selectedId === map.rootId) { toast('A ideia principal não tem ideias no mesmo nível. Use + Subideia.'); return; }
+  let created; mutate(() => { created = addSibling(selectedId); selectedId = created.id; }, 'Ideia criada no mesmo nível.');
+  ensureVisible(created); if (matchMedia('(min-width: 900px)').matches) { $('fTitle').focus(); $('fTitle').select(); }
+}
+function act_concept() {
+  let created; mutate(() => { created = addConcept(); selectedId = created.id; }, 'Conceito criado.');
+  ensureVisible(created); if (matchMedia('(min-width: 900px)').matches) { $('fTitle').focus(); $('fTitle').select(); }
+}
+function ensureVisible(n) {
+  const sx = n.x * view.k + view.x, sy = n.y * view.k + view.y, W = svg.clientWidth, H = svg.clientHeight, m = 120;
+  if (sx < m || sx > W - m || sy < m || sy > H - m) { view.x = W / 2 - n.x * view.k; view.y = H / 2 - n.y * view.k; renderCanvas(); }
+}
+function act_delete() {
+  if (selectedId === map.rootId) { toast('A ideia principal não pode ser apagada.'); return; }
+  const before = snap(), parent = map.nodes[selectedId].parentId;
+  pushUndo(before); deleteBranch(selectedId); selectedId = parent && map.nodes[parent] ? parent : map.rootId; renderAll(); changed();
+  toast('Apagado.', 'Desfazer', undo);
+}
+function act_collapse() { const n = map.nodes[selectedId]; if (children(n.id).length) mutate(() => { n.collapsed = !n.collapsed; }, n.collapsed ? 'Ramo recolhido.' : 'Ramo expandido.'); }
+function act_organize() { mutate(() => { arrange(); }, 'Mapa organizado.'); setTimeout(fitMap, 0); }
+function loadMap(m, msg) {
+  pushUndo(); map = m; selectedId = map.rootId; renderAll(); setTimeout(fitMap, 0); persist(); toast(msg, 'Desfazer', undo);
+}
+function openLink() {
+  const list = nodes(); if (list.length < 2) { toast('Crie pelo menos dois conceitos antes de conectar.'); return; }
+  const opts = list.map((n) => `<option value="${n.id}">${esc(n.text.replace(/\s+/g, ' ').slice(0, 60))}</option>`).join('');
+  $('lkFrom').innerHTML = opts; $('lkTo').innerHTML = opts;
+  $('lkFrom').value = selectedId; $('lkTo').value = list.find((n) => n.id !== selectedId).id; $('lkLabel').value = 'relaciona-se com';
+  $('dlgLink').showModal(); $('lkLabel').focus(); $('lkLabel').select();
+}
+function exportSvg() {
+  const bs = nodes().map(box), pad = 60, minX = Math.min(...bs.map((b) => b[0])) - pad, minY = Math.min(...bs.map((b) => b[1])) - pad, maxX = Math.max(...bs.map((b) => b[2])) + pad, maxY = Math.max(...bs.map((b) => b[3])) + pad;
+  const vis = visibleNodes(), ids = new Set(vis.map((n) => n.id)); let edges = '';
+  if (map.mapType === 'mind') vis.forEach((n) => { if (n.parentId && ids.has(n.parentId)) edges += edgeSvg(map.nodes[n.parentId], n); });
+  else Object.values(map.rels).forEach((r) => { if (ids.has(r.sourceId) && ids.has(r.targetId)) edges += relSvg(map.nodes[r.sourceId], map.nodes[r.targetId], r.label); });
+  const body = (edges + vis.map(nodeSvg).join('')).replace(/ class="node sel"/g, ' class="node"');
+  const css = `.edge{fill:none;stroke:#9AABC4;stroke-width:2;stroke-linecap:round}.nshadow{fill:rgba(27,36,56,.14)}.ring{display:none}.node text{font-family:Segoe UI,Arial,sans-serif;font-weight:700}.rel-label{font:700 11px Segoe UI,Arial,sans-serif;fill:#1B2438}.rel-box{fill:#fff;stroke:#D3DBE8}`;
+  const out = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${minY} ${maxX - minX} ${maxY - minY}" width="${maxX - minX}" height="${maxY - minY}"><style>${css}</style><defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#9AABC4"/></marker></defs><rect x="${minX}" y="${minY}" width="${maxX - minX}" height="${maxY - minY}" fill="#FFFFFF"/>${body.replace(/var\(--line\)/g, '#D3DBE8')}</svg>`;
+  download(fileName('.svg'), out, 'image/svg+xml'); status('Imagem ' + fileName('.svg') + ' enviada para os seus downloads.');
+}
+async function openFile(file) {
+  try {
+    const m = fromPayload(JSON.parse(await file.text()));
+    loadMap(m, 'Mapa “' + m.title + '” aberto.');
+  } catch (e) { toast(e instanceof SyntaxError ? 'O arquivo está corrompido ou não está em JSON.' : e.message); }
+}
+
+/* ---------- eventos ---------- */
+const typing = () => /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+let editSnap = null, editPushed = false;
+function startEdit() { editSnap = snap(); editPushed = false; }
+function onEdit() { if (!editPushed && editSnap) { pushUndo(editSnap); editPushed = true; } }
+$('fTitle').addEventListener('focus', startEdit); $('fNote').addEventListener('focus', startEdit); $('mapTitle').addEventListener('focus', startEdit);
+$('fTitle').addEventListener('input', (e) => { onEdit(); map.nodes[selectedId].text = e.target.value.trim() ? e.target.value : 'Ideia sem nome'; if (!e.target.value.trim()) return; renderTree(); renderCanvas(); $('selName').textContent = e.target.value.replace(/\s+/g, ' '); changed(); });
+$('fTitle').addEventListener('blur', () => { const n = map.nodes[selectedId]; if (n) { n.text = n.text.trim() || 'Ideia sem nome'; renderAll(); } });
+$('fTitle').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('fTitle').blur(); svg.focus(); } });
+$('fNote').addEventListener('input', (e) => { onEdit(); map.nodes[selectedId].note = e.target.value; renderTree(); renderCanvas(); changed(); });
+$('mapTitle').addEventListener('input', (e) => { onEdit(); map.title = e.target.value.trim() || 'Novo mapa'; document.title = map.title + ' — ThinkTrellis'; changed(); });
+$('mapTitle').addEventListener('blur', () => { $('mapTitle').value = map.title; });
+$('mapTitle').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); svg.focus(); } });
+
+$('act1').onclick = () => (map.mapType === 'conceptual' ? act_concept() : act_sibling());
+$('act2').onclick = () => (map.mapType === 'conceptual' ? openLink() : act_child());
+$('organizeBtn').onclick = act_organize; $('undoBtn').onclick = undo;
+$('collapseBtn').onclick = act_collapse; $('deleteBtn').onclick = act_delete;
+$('zoomIn').onclick = () => zoomBy(1.15); $('zoomOut').onclick = () => zoomBy(0.87); $('fitBtn').onclick = fitMap;
+$('swatches').addEventListener('click', (e) => { const b = e.target.closest('[data-color]'); if (b) mutate(() => { map.nodes[selectedId].color = b.dataset.color; }); });
+$('tree').addEventListener('click', (e) => {
+  const t = e.target.closest('[data-tog]'); if (t) { mutate(() => { map.nodes[t.dataset.tog].collapsed = !map.nodes[t.dataset.tog].collapsed; }); return; }
+  const r = e.target.closest('[data-id]'); if (r) select(r.dataset.id);
+});
+$('rels').addEventListener('input', (e) => { const li = e.target.closest('[data-rel]'); if (!li) return; onEdit(); map.rels[li.dataset.rel].label = e.target.value.trim() || 'relaciona-se com'; renderCanvas(); changed(); });
+$('rels').addEventListener('focusin', startEdit);
+$('rels').addEventListener('click', (e) => { const b = e.target.closest('[data-delrel]'); if (b) mutate(() => { delete map.rels[b.dataset.delrel]; }, 'Ligação apagada.'); });
+
+/* menu Arquivo */
+const menu = $('fileMenu');
+function closeMenu() { menu.hidden = true; $('fileBtn').setAttribute('aria-expanded', 'false'); }
+$('fileBtn').onclick = (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; $('fileBtn').setAttribute('aria-expanded', String(!menu.hidden)); };
+document.addEventListener('click', (e) => { if (!menu.contains(e.target)) closeMenu(); });
+menu.addEventListener('click', (e) => {
+  const c = e.target.closest('[data-cmd]'); if (!c) return; closeMenu();
+  ({ new: () => $('dlgType').showModal(), open: () => $('filePick').click(), save: saveFile, svg: exportSvg, about: () => $('dlgAbout').showModal() })[c.dataset.cmd]();
+});
+$('filePick').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) openFile(f); };
+$('dlgType').addEventListener('click', (e) => {
+  const c = e.target.closest('[data-type]'); if (!c) return; $('dlgType').close();
+  loadMap(newMap(c.dataset.type), c.dataset.type === 'mind' ? 'Novo mapa mental criado.' : 'Novo mapa conceitual criado.');
+});
+$('typeCancel').onclick = () => $('dlgType').close(); $('aboutOk').onclick = () => $('dlgAbout').close(); $('lkCancel').onclick = () => $('dlgLink').close();
+$('lkOk').onclick = () => {
+  const a = $('lkFrom').value, b = $('lkTo').value;
+  if (a === b) { toast('Escolha dois conceitos diferentes para conectar.'); return; }
+  $('dlgLink').close(); mutate(() => { addRelationship(a, b, $('lkLabel').value); }, 'Ligação criada.');
+};
+$('dlgLink').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'lkLabel') { e.preventDefault(); $('lkOk').click(); } });
+
+/* tema */
+function currentTheme() { return document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+function setTheme(t) { document.documentElement.dataset.theme = t; store(() => localStorage.setItem(THEME_KEY, t)); renderCanvas(); }
+$('themeBtn').onclick = () => setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+const savedTheme = store(() => localStorage.getItem(THEME_KEY)); if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.dataset.theme = savedTheme;
+
+/* abas (celular) */
+function setPane(p) { document.body.dataset.pane = p; document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.pane === p))); if (p === 'map') requestAnimationFrame(renderCanvas); }
+document.querySelector('.tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-pane]'); if (b) setPane(b.dataset.pane); });
+setPane('map');
+
+/* mapa: ponteiro, arraste, zoom e teclado */
+const pointers = new Map(); let drag = null, pan = null, pinch = null;
+const local = (e) => { const r = svg.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+svg.addEventListener('pointerdown', (e) => {
+  svg.focus({ preventScroll: true }); svg.setPointerCapture(e.pointerId); pointers.set(e.pointerId, local(e));
+  if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; drag = null; pan = null; return; }
+  const el = e.target.closest('.node'), [x, y] = local(e);
+  if (el) { select(el.dataset.id); drag = { id: el.dataset.id, x, y, snap: snap(), moved: false }; pan = null; }
+  else { pan = { x, y }; drag = null; }
+});
+svg.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) return; const [x, y] = local(e); pointers.set(e.pointerId, [x, y]);
+  if (pinch && pointers.size === 2) {
+    const [a, b] = [...pointers.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch.d > 0) zoomBy(d / pinch.d, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); pinch.d = d; return;
+  }
+  if (drag) {
+    const dx = (x - drag.x) / view.k, dy = (y - drag.y) / view.k;
+    if (drag.moved || Math.abs(x - drag.x) + Math.abs(y - drag.y) > 3) { const n = map.nodes[drag.id]; n.x += dx; n.y += dy; drag.x = x; drag.y = y; drag.moved = true; renderCanvas(); }
+  } else if (pan) { view.x += x - pan.x; view.y += y - pan.y; pan.x = x; pan.y = y; renderCanvas(); }
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null;
+  if (drag && drag.moved) { pushUndo(drag.snap); renderInspector(); changed('Ideia movida.'); }
+  if (!pointers.size) { drag = null; pan = null; }
+}
+svg.addEventListener('pointerup', endPointer); svg.addEventListener('pointercancel', endPointer);
+svg.addEventListener('dblclick', (e) => { const el = e.target.closest('.node'); if (el) { select(el.dataset.id); $('fTitle').focus(); $('fTitle').select(); if (!matchMedia('(min-width: 900px)').matches) setPane('detail'); } });
+svg.addEventListener('wheel', (e) => {
+  e.preventDefault(); const [x, y] = local(e);
+  if (e.ctrlKey || e.metaKey) zoomBy(e.deltaY < 0 ? 1.1 : 0.9, x, y); else { view.x -= e.deltaX; view.y -= e.deltaY; renderCanvas(); }
+}, { passive: false });
+svg.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); act_child(); }
+  else if (e.key === 'Enter') { e.preventDefault(); act_sibling(); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); act_delete(); }
+  else if (e.key === 'F2') { e.preventDefault(); $('fTitle').focus(); $('fTitle').select(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F2' && !typing()) { e.preventDefault(); $('fTitle').focus(); $('fTitle').select(); return; }
+  if (!(e.ctrlKey || e.metaKey)) return; const k = e.key.toLowerCase();
+  if (k === 's') { e.preventDefault(); saveFile(); }
+  else if (k === 'o') { e.preventDefault(); $('filePick').click(); }
+  else if (k === 'z' && !typing()) { e.preventDefault(); undo(); }
+  else if (k === 'l') { e.preventDefault(); act_organize(); }
+  else if (k === '0') { e.preventDefault(); fitMap(); }
+  else if ((k === '=' || k === '+') && !typing()) { e.preventDefault(); zoomBy(1.15); }
+  else if (k === '-' && !typing()) { e.preventDefault(); zoomBy(0.87); }
+});
+let dragDepth = 0;
+addEventListener('dragenter', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { dragDepth++; $('drop').hidden = false; } });
+addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('drop').hidden = true; });
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; $('drop').hidden = true; const f = e.dataTransfer?.files?.[0]; if (f) openFile(f); });
+new ResizeObserver(() => renderCanvas()).observe(svg);
+addEventListener('beforeunload', () => store(() => localStorage.setItem(KEY, JSON.stringify(toPayload()))));
+
+/* ---------- início ---------- */
+function sampleMap() {
+  const m = newMap('mind', 'Exemplo: planejar uma viagem'); map = m; m.nodes[m.rootId].text = 'Planejar uma viagem';
+  const add = (parent, text) => { const n = addChild(parent, text); return n.id; };
+  const dest = add(m.rootId, 'Destino'), money = add(m.rootId, 'Orçamento'), plan = add(m.rootId, 'Roteiro'), stay = add(m.rootId, 'Hospedagem');
+  ['Praia ou serra?', 'Melhor época'].forEach((t) => add(dest, t));
+  ['Passagens', 'Alimentação'].forEach((t) => add(money, t));
+  ['Passeios', 'Dias de descanso'].forEach((t) => add(plan, t));
+  ['Hotel', 'Casa de aluguel'].forEach((t) => add(stay, t));
+  m.nodes[dest].note = 'Pesquisar clima e preço antes de decidir.';
+  arrange(); return m;
+}
+let restored = false;
+const raw = store(() => localStorage.getItem(KEY));
+if (raw) { try { map = fromPayload(JSON.parse(raw)); restored = true; } catch (e) { map = null; } }
+if (!map) map = sampleMap();
+selectedId = map.rootId; renderAll(); requestAnimationFrame(() => { fitMap(); });
+status(restored ? 'Seu último mapa foi recuperado neste navegador.' : 'Este é um mapa de exemplo. Use Arquivo → Novo mapa para criar o seu.');
+window.__tt = { get map() { return map; }, toPayload };
+})();
+</script>
+
+</body>
+</html>
