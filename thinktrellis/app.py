@@ -785,7 +785,11 @@ class ThinkTrellisApp:
         text.vbar.destroy()
         bar = ttk.Scrollbar(text.frame, orient="vertical", command=text.yview)
         text.configure(yscrollcommand=bar.set)
-        bar.pack(side="right", fill="y", before=text)
+        # str(ScrolledText) devolve o quadro externo, que ainda não foi
+        # empacotado; por isso a ordem é refeita sem usar "before=".
+        tk.Text.pack_forget(text)
+        bar.pack(side="right", fill="y")
+        tk.Text.pack(text, side="left", fill="both", expand=True)
         text.vbar = bar  # type: ignore[assignment]
         self._style_text(text)
         return text
