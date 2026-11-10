@@ -33,51 +33,46 @@ except ImportError:  # pragma: no cover - depende da instalação usada para exe
     ReportLabCanvas = None
 
 
-# Visual clássico inspirado no Windows 98: cinza de janela, campos brancos
-# afundados, botões com relevo e azul-marinho como única cor de destaque.
-# "hilite", "light", "shadow" e "darkshadow" formam o relevo (de claro a escuro).
+# Visual moderno e limpo: fundos suaves, cantos arredondados, linhas finas e
+# um único azul de destaque. Os dois temas usam exatamente as mesmas chaves.
 THEMES = {
     "light": {
-        "name": "Clássico",
-        "bg": "#C0C0C0",
-        "surface": "#C0C0C0",
+        "name": "Claro",
+        "bg": "#F7F9FC",
+        "surface": "#F7F9FC",
         "field": "#FFFFFF",
         "canvas": "#FFFFFF",
-        "canvas_grid": "#EBEBEB",
-        "hilite": "#FFFFFF",
-        "light": "#DFDFDF",
-        "shadow": "#808080",
-        "darkshadow": "#000000",
-        "border": "#404040",
-        "text": "#000000",
-        "muted": "#3C3C3C",
-        "disabled": "#808080",
-        "primary": "#000080",
-        "primary_hover": "#1A1AA6",
+        "canvas_grid": "#EDF1F7",
+        "border": "#D3DBE8",
+        "shadow": "#E1E7F1",
+        "text": "#1B2438",
+        "muted": "#5B6880",
+        "disabled": "#9AA5B8",
+        "primary": "#2563EB",
+        "primary_hover": "#1D4ED8",
+        "primary_soft": "#E3ECFE",
         "primary_text": "#FFFFFF",
-        "danger": "#800000",
-        "connection": "#404040",
+        "danger": "#C0343F",
+        "connection": "#9AABC4",
     },
     "dark": {
-        "name": "Clássico escuro",
-        "bg": "#3A3A3A",
-        "surface": "#3A3A3A",
-        "field": "#1E1E1E",
-        "canvas": "#1E1E1E",
-        "canvas_grid": "#2A2A2A",
-        "hilite": "#6A6A6A",
-        "light": "#505050",
-        "shadow": "#252525",
-        "darkshadow": "#000000",
-        "border": "#0E0E0E",
-        "text": "#F0F0F0",
-        "muted": "#BDBDBD",
-        "disabled": "#7C7C7C",
-        "primary": "#2F5FB3",
-        "primary_hover": "#4474C8",
+        "name": "Escuro",
+        "bg": "#141C2E",
+        "surface": "#141C2E",
+        "field": "#0F1626",
+        "canvas": "#0E1524",
+        "canvas_grid": "#18223A",
+        "border": "#2B3852",
+        "shadow": "#0A101D",
+        "text": "#F3F6FC",
+        "muted": "#9FB0CB",
+        "disabled": "#5F6E88",
+        "primary": "#2563EB",
+        "primary_hover": "#3B82F6",
+        "primary_soft": "#1E3A6E",
         "primary_text": "#FFFFFF",
-        "danger": "#FF8F8F",
-        "connection": "#A0A0A0",
+        "danger": "#FF8A93",
+        "connection": "#566B92",
     },
 }
 
@@ -292,11 +287,13 @@ class MindMapCanvas(tk.Canvas):
         else:
             middle = (start[1] + end[1]) / 2
             points = (start[0], start[1], start[0], middle, end[0], middle, end[0], end[1])
-        # Linhas retas com cotovelo, como num diagrama clássico.
+        # Curva suave que sai de uma caixa e chega na outra.
         self.create_line(
             *points,
             fill=self.palette["connection"],
             width=max(1, int(2 * self.scale)),
+            smooth=True,
+            capstyle="round",
             tags=("connection",),
         )
 
@@ -350,28 +347,20 @@ class MindMapCanvas(tk.Canvas):
             backdrop = self.create_rectangle(
                 box[0] - 4, box[1] - 2, box[2] + 4, box[3] + 2,
                 fill=p["canvas"],
-                outline=p["shadow"],
+                outline=p["border"],
                 tags=("relationship",),
             )
             self.tag_lower(backdrop, text_id)
 
-    def _draw_bevel(self, x1: float, y1: float, x2: float, y2: float, raised: bool, tags: tuple[str, ...]) -> None:
-        """Desenha o relevo de dois níveis dos botões clássicos."""
-        p = self.palette
-        if raised:
-            top_outer, top_inner = p["hilite"], p["light"]
-            bottom_outer, bottom_inner = p["darkshadow"], p["shadow"]
-        else:
-            top_outer, top_inner = p["shadow"], p["darkshadow"]
-            bottom_outer, bottom_inner = p["hilite"], p["light"]
-        if self.scale < 0.7:  # Em zoom pequeno, uma linha só mantém a caixa nítida.
-            self.create_line(x1, y2, x1, y1, x2, y1, fill=top_outer, tags=tags)
-            self.create_line(x1, y2, x2, y2, x2, y1, fill=bottom_inner, tags=tags)
-            return
-        self.create_line(x1, y2, x1, y1, x2, y1, fill=top_outer, tags=tags)
-        self.create_line(x1 + 1, y2 - 1, x1 + 1, y1 + 1, x2 - 1, y1 + 1, fill=top_inner, tags=tags)
-        self.create_line(x1, y2, x2, y2, x2, y1, fill=bottom_outer, tags=tags)
-        self.create_line(x1 + 1, y2 - 1, x2 - 1, y2 - 1, x2 - 1, y1 + 1, fill=bottom_inner, tags=tags)
+    def _round_rect(self, x1: float, y1: float, x2: float, y2: float, radius: float, **options) -> int:
+        """Retângulo de cantos arredondados (polígono suavizado)."""
+        radius = max(0.0, min(radius, (x2 - x1) / 2, (y2 - y1) / 2))
+        points = (
+            x1 + radius, y1, x2 - radius, y1, x2, y1, x2, y1 + radius,
+            x2, y2 - radius, x2, y2, x2 - radius, y2, x1 + radius, y2,
+            x1, y2, x1, y2 - radius, x1, y1 + radius, x1, y1,
+        )
+        return self.create_polygon(points, smooth=True, **options)
 
     def _draw_node(self, node: MindNode) -> None:
         p = self.palette
@@ -381,17 +370,14 @@ class MindMapCanvas(tk.Canvas):
         hovered = node.id == self._hovered
         tags = ("node", node.id)
         text_color = readable_text_color(node.color)
+        radius = max(5.0, 12.0 * self.scale)
 
+        self._round_rect(x1, y1 + 3, x2, y2 + 3, radius, fill=p["shadow"], outline="", tags=tags)
         if selected:
-            self.create_rectangle(x1 - 4, y1 - 4, x2 + 4, y2 + 4, outline=p["primary"], width=2, tags=tags)
+            self._round_rect(x1 - 4, y1 - 4, x2 + 4, y2 + 4, radius + 3, fill="", outline=p["primary"], width=3, tags=tags)
         elif hovered:
-            self.create_rectangle(x1 - 3, y1 - 3, x2 + 3, y2 + 3, outline=p["shadow"], dash=(2, 2), tags=tags)
-
-        self.create_rectangle(x1, y1, x2, y2, fill=node.color, outline=p["darkshadow"], tags=tags)
-        self._draw_bevel(x1 + 1, y1 + 1, x2 - 1, y2 - 1, raised=True, tags=tags)
-        if selected:
-            # O retângulo pontilhado é o "foco" clássico do Windows.
-            self.create_rectangle(x1 + 6, y1 + 6, x2 - 6, y2 - 6, outline=text_color, dash=(1, 2), tags=tags)
+            self._round_rect(x1 - 3, y1 - 3, x2 + 3, y2 + 3, radius + 2, fill="", outline=p["connection"], width=2, tags=tags)
+        self._round_rect(x1, y1, x2, y2, radius, fill=node.color, outline=p["border"], tags=tags)
 
         text_size = max(8, min(14, int(10 * self.scale)))
         lines = wrap_label(node.text)
@@ -408,14 +394,12 @@ class MindMapCanvas(tk.Canvas):
             tags=tags,
         )
         if node.collapsed and self.app.map.children(node.id):
-            # Quadradinho com "+", igual ao das árvores do Windows clássico.
-            size = max(9.0, 11.0 * self.scale)
+            # Bolinha com "+" indica que há subideias recolhidas.
+            size = max(14.0, 16.0 * self.scale)
             bx2, by1 = x2 - 6, y1 + 6
             bx1, by2 = bx2 - size, by1 + size
-            cx, cy = (bx1 + bx2) / 2, (by1 + by2) / 2
-            self.create_rectangle(bx1, by1, bx2, by2, fill="#FFFFFF", outline="#000000", tags=tags)
-            self.create_line(bx1 + 3, cy, bx2 - 2, cy, fill="#000000", tags=tags)
-            self.create_line(cx, by1 + 3, cx, by2 - 2, fill="#000000", tags=tags)
+            self.create_oval(bx1, by1, bx2, by2, fill="#FFFFFF", outline=p["border"], tags=tags)
+            self.create_text((bx1 + bx2) / 2, (by1 + by2) / 2, text="+", fill="#1B2438", font=self.app.ui_font(9, "bold"), tags=tags)
 
     def _hit_test(self, x: float, y: float) -> str | None:
         for node_id, (x1, y1, x2, y2) in reversed(list(self._node_boxes.items())):
@@ -578,12 +562,12 @@ class ThinkTrellisApp:
     # Fontes e janela
     # ------------------------------------------------------------------
     def _pick_font_family(self) -> str:
-        """Escolhe a fonte mais parecida com a do Windows clássico que existir."""
+        """Escolhe a primeira fonte moderna e limpa que existir no sistema."""
         try:
             installed = {name.casefold(): name for name in tkfont.families(self.root)}
         except tk.TclError:
             return "Helvetica"
-        for candidate in ("Tahoma", "Liberation Sans", "Arimo", "Noto Sans", "DejaVu Sans", "Segoe UI", "Arial", "Helvetica"):
+        for candidate in ("Segoe UI", "Inter", "Roboto", "Noto Sans", "Ubuntu", "Cantarell", "DejaVu Sans", "Liberation Sans", "Arial", "Helvetica"):
             if candidate.casefold() in installed:
                 return installed[candidate.casefold()]
         return "Helvetica"
@@ -758,25 +742,31 @@ class ThinkTrellisApp:
             activebackground=p["primary"],
             activeforeground=p["primary_text"],
             disabledforeground=p["disabled"],
-            borderwidth=2,
-            relief="raised",
+            borderwidth=1,
+            relief="flat",
             font=self.ui_font(9),
         )
 
     def _group(self, master: tk.Misc, text: str) -> tk.LabelFrame:
-        """Caixa com título e borda gravada, como nas janelas do Windows clássico."""
-        frame = tk.LabelFrame(master, text=text, bd=2, relief="groove", padx=8, pady=6)
+        """Cartão com título e uma linha fina de contorno."""
+        frame = tk.LabelFrame(master, text=text, bd=0, relief="flat", padx=12, pady=8, highlightthickness=1)
         self._groups.append(frame)
         self._style_group(frame)
         return frame
 
     def _style_group(self, frame: tk.LabelFrame) -> None:
         p = self.palette
-        frame.configure(bg=p["surface"], fg=p["text"], font=self.ui_font(9))
+        frame.configure(
+            bg=p["surface"],
+            fg=p["muted"],
+            font=self.ui_font(9, "bold"),
+            highlightbackground=p["border"],
+            highlightcolor=p["border"],
+        )
 
     def _bevel_frame(self, master: tk.Misc, relief: Literal["raised", "sunken"] = "sunken", border: int = 2) -> tk.Frame:
-        """Moldura com relevo (afundada ou saliente) desenhada pelo próprio Tk."""
-        frame = tk.Frame(master, bd=border, relief=relief, bg=self.palette["surface"])
+        """Moldura plana com contorno fino (os parâmetros antigos são ignorados)."""
+        frame = tk.Frame(master, bd=0, relief="flat", highlightthickness=1, bg=self.palette["surface"])
         self._bevels.append(frame)
         return frame
 
@@ -787,11 +777,11 @@ class ThinkTrellisApp:
         for group in self._groups:
             self._style_group(group)
         for bevel in self._bevels:
-            bevel.configure(bg=p["surface"])
+            bevel.configure(bg=p["surface"], highlightbackground=p["border"], highlightcolor=p["border"])
 
     def _make_text(self, master: tk.Misc, **options) -> ScrolledText:
         """Campo de texto afundado, com a mesma barra de rolagem do resto do app."""
-        text = ScrolledText(master, relief="sunken", borderwidth=2, highlightthickness=0, **options)
+        text = ScrolledText(master, relief="flat", borderwidth=0, highlightthickness=1, **options)
         text.vbar.destroy()
         bar = ttk.Scrollbar(text.frame, orient="vertical", command=text.yview)
         text.configure(yscrollcommand=bar.set)
@@ -809,8 +799,10 @@ class ThinkTrellisApp:
             selectbackground=p["primary"],
             selectforeground=p["primary_text"],
             font=self.ui_font(9),
-            padx=6,
-            pady=4,
+            padx=8,
+            pady=6,
+            highlightbackground=p["border"],
+            highlightcolor=p["primary"],
         )
 
     def _refresh_swatches(self) -> None:
@@ -819,7 +811,11 @@ class ThinkTrellisApp:
         if self.selected_id in self.map.nodes:
             current = self.map.nodes[self.selected_id].color.upper()
         for button, color in self._swatches:
-            button.configure(relief="sunken" if color.upper() == current else "raised")
+            chosen = color.upper() == current
+            button.configure(
+                highlightbackground=self.palette["primary"] if chosen else self.palette["border"],
+                highlightthickness=3 if chosen else 1,
+            )
 
     def _build_layout(self) -> None:
         outer = ttk.Frame(self.root, style="App.TFrame", padding=0)
@@ -863,10 +859,16 @@ class ThinkTrellisApp:
         left = ttk.Frame(body, style="App.TFrame", width=236)
         left.pack(side="left", fill="y")
         left.pack_propagate(False)
-        # Sem painel de instruções: a dica de uma linha acima do mapa e a
-        # mensagem no mapa vazio já mostram o caminho, deixando a tela limpa.
+        self.guide_group = self._group(left, "Como usar")
+        self.guide_group.pack(fill="x")
+        self.intro_label = ttk.Label(self.guide_group, text="Um mapa de cada vez, sem complicação.", style="Hint.TLabel", wraplength=196)
+        self.intro_label.pack(anchor="w", pady=(0, 4))
+        self.step_one_title, self.step_one_detail = self._step(self.guide_group, "1", "Clique em uma caixa", "Ela fica marcada. À direita você pode mudar o nome e a cor.")
+        self.step_two_title, self.step_two_detail = self._step(self.guide_group, "2", "Adicione uma subideia", "Com a caixa marcada, clique em + Subideia no alto.")
+        self.step_three_title, self.step_three_detail = self._step(self.guide_group, "3", "Organize quando quiser", "Arraste as caixas ou clique em Organizar.")
+
         self.tree_group = self._group(left, "Estrutura do mapa")
-        self.tree_group.pack(fill="both", expand=True)
+        self.tree_group.pack(fill="both", expand=True, pady=(8, 0))
         tree_frame = ttk.Frame(self.tree_group, style="Panel.TFrame")
         tree_frame.pack(fill="both", expand=True)
         self.tree = ttk.Treeview(tree_frame, show="tree", selectmode="browse", style="Mind.Treeview")
@@ -922,9 +924,9 @@ class ThinkTrellisApp:
                 activebackground=color,
                 width=2,
                 height=1,
-                relief="raised",
-                bd=2,
-                highlightthickness=0,
+                relief="flat",
+                bd=0,
+                highlightthickness=1,
                 cursor="hand2",
                 command=lambda current=color: self.set_selected_color(current),
             )
@@ -935,6 +937,8 @@ class ThinkTrellisApp:
         self.collapse_button.pack(fill="x", pady=(6, 0))
         self.delete_button = ttk.Button(details, text="Apagar ideia", command=self.delete_selected, style="Danger.TButton")
         self.delete_button.pack(fill="x", pady=(6, 0))
+        self.right_tip_label = ttk.Label(details, text="Não precisa decorar atalhos: use os botões no alto da tela.", style="Hint.TLabel", wraplength=226)
+        self.right_tip_label.pack(anchor="w", side="bottom", pady=(10, 0))
 
         # Barra de status com dois campos afundados.
         status = ttk.Frame(outer, style="App.TFrame", padding=(8, 0, 8, 6))
@@ -945,6 +949,18 @@ class ThinkTrellisApp:
         file_cell = self._bevel_frame(status, relief="sunken", border=1)
         file_cell.pack(side="right", padx=(4, 0))
         ttk.Label(file_cell, text=f"Offline • Arquivos {MAP_FILE_EXTENSION}", style="Status.TLabel", padding=(8, 2)).pack()
+
+    def _step(self, master: tk.Misc, number: str, title: str, detail: str) -> tuple[ttk.Label, ttk.Label]:
+        step = ttk.Frame(master, style="Panel.TFrame")
+        step.pack(fill="x", pady=4)
+        ttk.Label(step, text=number, style="Step.TLabel", width=2, anchor="center").pack(side="left", anchor="n", padx=(0, 8))
+        contents = ttk.Frame(step, style="Panel.TFrame")
+        contents.pack(side="left", fill="x", expand=True)
+        title_label = ttk.Label(contents, text=title, style="StepTitle.TLabel")
+        title_label.pack(anchor="w")
+        detail_label = ttk.Label(contents, text=detail, style="Hint.TLabel", wraplength=150)
+        detail_label.pack(anchor="w", pady=(2, 0))
+        return title_label, detail_label
 
     def _bind_shortcuts(self) -> None:
         self.root.bind_all("<Control-n>", lambda _event: self.new_map())
@@ -1019,22 +1035,22 @@ class ThinkTrellisApp:
         style = self.style
         self.root.configure(bg=p["bg"])
 
-        # Base: cinza de janela, texto preto e relevo em dois níveis. Os campos
-        # "bordercolor/lightcolor/darkcolor" desenham o chanfro dos widgets.
+        # Base: fundo suave, texto escuro e contornos de uma linha só. As cores
+        # "lightcolor/darkcolor" iguais à borda removem qualquer efeito de relevo.
         style.configure(
             ".",
             background=p["surface"],
             foreground=p["text"],
             font=font(9),
             bordercolor=p["border"],
-            lightcolor=p["hilite"],
-            darkcolor=p["shadow"],
-            troughcolor=p["light"],
+            lightcolor=p["border"],
+            darkcolor=p["border"],
+            troughcolor=p["canvas_grid"],
             fieldbackground=p["field"],
             selectbackground=p["primary"],
             selectforeground=p["primary_text"],
             insertcolor=p["text"],
-            focuscolor=p["text"],
+            focuscolor=p["surface"],
         )
         style.map(
             ".",
@@ -1045,58 +1061,60 @@ class ThinkTrellisApp:
         for frame_style in ("App.TFrame", "Header.TFrame", "Panel.TFrame", "Status.TFrame"):
             style.configure(frame_style, background=p["surface"])
         style.configure("TLabel", background=p["surface"], foreground=p["text"])
-        style.configure("Brand.TLabel", font=font(12, "bold"))
+        style.configure("Brand.TLabel", font=font(13, "bold"))
         style.configure("Logo.TLabel", background=p["primary"], foreground=p["primary_text"], font=font(12, "bold"), padding=(6, 2))
-        style.configure("Version.TLabel", foreground=p["muted"], font=font(9))
+        style.configure("Version.TLabel", background=p["primary_soft"], foreground=p["primary"] if self.theme_name == "light" else p["text"], font=font(9, "bold"), padding=(8, 2))
         style.configure("Hint.TLabel", foreground=p["muted"], font=font(9))
-        style.configure("Field.TLabel", foreground=p["text"], font=font(9))
+        style.configure("Field.TLabel", foreground=p["muted"], font=font(9, "bold"))
         style.configure("Value.TLabel", foreground=p["text"], font=font(9))
-        style.configure("Selected.TLabel", background=p["primary"], foreground=p["primary_text"], font=font(9, "bold"), padding=(8, 4))
-        style.configure("Status.TLabel", foreground=p["text"], font=font(9))
-        style.configure("Zoom.TLabel", foreground=p["text"], font=font(9))
-        style.configure("TSeparator", background=p["shadow"])
+        style.configure("Selected.TLabel", background=p["primary_soft"], foreground=p["primary"] if self.theme_name == "light" else p["text"], font=font(9, "bold"), padding=(10, 6))
+        style.configure("Step.TLabel", background=p["primary"], foreground=p["primary_text"], font=font(9, "bold"), padding=(4, 1))
+        style.configure("StepTitle.TLabel", font=font(9, "bold"))
+        style.configure("Status.TLabel", foreground=p["muted"], font=font(9))
+        style.configure("Zoom.TLabel", foreground=p["text"], font=font(9, "bold"))
+        style.configure("TSeparator", background=p["border"])
 
-        # Botões com relevo; ao clicar, o relevo se inverte (afunda).
+        # Botões planos: contorno fino e destaque suave ao passar o mouse.
         style.configure(
             "TButton",
-            background=p["surface"],
+            background=p["field"],
             foreground=p["text"],
             font=font(9),
             anchor="center",
-            padding=(10, 3),
-            borderwidth=2,
-            relief="raised",
+            padding=(12, 5),
+            borderwidth=1,
+            relief="flat",
         )
         style.map(
             "TButton",
-            background=[("disabled", p["surface"]), ("pressed", p["surface"]), ("active", p["surface"])],
+            background=[("disabled", p["surface"]), ("pressed", p["primary_soft"]), ("active", p["primary_soft"])],
             foreground=[("disabled", p["disabled"])],
-            lightcolor=[("pressed", p["shadow"])],
-            darkcolor=[("pressed", p["hilite"])],
-            bordercolor=[("pressed", p["darkshadow"])],
-            relief=[("pressed", "sunken")],
+            bordercolor=[("disabled", p["border"]), ("pressed", p["primary"]), ("active", p["primary"])],
+            lightcolor=[("pressed", p["primary_soft"]), ("active", p["primary_soft"])],
+            darkcolor=[("pressed", p["primary_soft"]), ("active", p["primary_soft"])],
         )
-        # O botão principal é o único com cor: azul-marinho, como a seleção clássica.
+        # O botão principal é o único preenchido com a cor de destaque.
         style.configure(
             "Primary.TButton",
             background=p["primary"],
             foreground=p["primary_text"],
-            lightcolor=p["primary_hover"],
-            darkcolor=p["darkshadow"],
-            bordercolor=p["darkshadow"],
+            lightcolor=p["primary"],
+            darkcolor=p["primary"],
+            bordercolor=p["primary"],
             font=font(9, "bold"),
         )
         style.map(
             "Primary.TButton",
-            background=[("disabled", p["shadow"]), ("pressed", p["primary"]), ("active", p["primary_hover"])],
+            background=[("disabled", p["border"]), ("pressed", p["primary_hover"]), ("active", p["primary_hover"])],
             foreground=[("disabled", p["disabled"])],
-            lightcolor=[("pressed", p["darkshadow"])],
-            darkcolor=[("pressed", p["primary_hover"])],
+            lightcolor=[("pressed", p["primary_hover"]), ("active", p["primary_hover"])],
+            darkcolor=[("pressed", p["primary_hover"]), ("active", p["primary_hover"])],
+            bordercolor=[("pressed", p["primary_hover"]), ("active", p["primary_hover"])],
         )
         style.configure("Danger.TButton", foreground=p["danger"])
-        style.configure("Zoom.TButton", padding=(4, 1))
+        style.configure("Zoom.TButton", padding=(4, 2))
 
-        # Campos de texto afundados, com fundo branco.
+        # Campos de texto com contorno fino que ganha a cor de destaque ao focar.
         for entry_style, entry_font in (
             ("TEntry", font(9)),
             ("Title.TEntry", font(10, "bold")),
@@ -1107,11 +1125,11 @@ class ThinkTrellisApp:
                 fieldbackground=p["field"],
                 foreground=p["text"],
                 insertcolor=p["text"],
-                bordercolor=p["shadow"],
-                lightcolor=p["hilite"],
-                darkcolor=p["darkshadow"],
-                borderwidth=2,
-                padding=(4, 3),
+                bordercolor=p["border"],
+                lightcolor=p["border"],
+                darkcolor=p["border"],
+                borderwidth=1,
+                padding=(8, 5),
                 font=entry_font,
             )
         style.map(
@@ -1123,20 +1141,21 @@ class ThinkTrellisApp:
         style.configure(
             "TCombobox",
             fieldbackground=p["field"],
-            background=p["surface"],
+            background=p["field"],
             foreground=p["text"],
-            arrowcolor=p["text"],
-            bordercolor=p["shadow"],
-            lightcolor=p["hilite"],
-            darkcolor=p["darkshadow"],
+            arrowcolor=p["muted"],
+            bordercolor=p["border"],
+            lightcolor=p["border"],
+            darkcolor=p["border"],
             insertcolor=p["text"],
-            padding=(4, 3),
-            arrowsize=16,
+            padding=(8, 5),
+            arrowsize=14,
         )
         style.map(
             "TCombobox",
             fieldbackground=[("readonly", p["field"])],
             foreground=[("readonly", p["text"])],
+            bordercolor=[("focus", p["primary"])],
         )
         self.root.option_add("*TCombobox*Listbox.background", p["field"])
         self.root.option_add("*TCombobox*Listbox.foreground", p["text"])
@@ -1149,12 +1168,12 @@ class ThinkTrellisApp:
             background=p["field"],
             fieldbackground=p["field"],
             foreground=p["text"],
-            bordercolor=p["shadow"],
-            lightcolor=p["hilite"],
-            darkcolor=p["darkshadow"],
-            borderwidth=2,
+            bordercolor=p["border"],
+            lightcolor=p["border"],
+            darkcolor=p["border"],
+            borderwidth=1,
             font=font(9),
-            rowheight=20,
+            rowheight=26,
         )
         style.map(
             "Treeview",
@@ -1163,41 +1182,41 @@ class ThinkTrellisApp:
         )
         style.configure(
             "TScrollbar",
-            background=p["surface"],
-            troughcolor=p["light"],
-            bordercolor=p["border"],
-            lightcolor=p["hilite"],
-            darkcolor=p["shadow"],
-            arrowcolor=p["text"],
-            arrowsize=16,
+            background=p["border"],
+            troughcolor=p["surface"],
+            bordercolor=p["surface"],
+            lightcolor=p["border"],
+            darkcolor=p["border"],
+            arrowcolor=p["muted"],
+            arrowsize=12,
             gripcount=0,
-            borderwidth=2,
+            borderwidth=0,
         )
         style.map(
             "TScrollbar",
-            background=[("active", p["surface"]), ("pressed", p["surface"])],
+            background=[("active", p["connection"]), ("pressed", p["connection"])],
         )
         style.configure(
             "TNotebook",
             background=p["surface"],
             bordercolor=p["border"],
-            lightcolor=p["hilite"],
-            darkcolor=p["shadow"],
-            tabmargins=(2, 4, 2, 0),
+            lightcolor=p["border"],
+            darkcolor=p["border"],
+            tabmargins=(0, 4, 0, 0),
         )
         style.configure(
             "TNotebook.Tab",
             background=p["surface"],
-            foreground=p["text"],
+            foreground=p["muted"],
             bordercolor=p["border"],
-            lightcolor=p["hilite"],
-            darkcolor=p["shadow"],
-            padding=(10, 3),
+            lightcolor=p["surface"],
+            darkcolor=p["surface"],
+            padding=(14, 6),
         )
         style.map(
             "TNotebook.Tab",
-            background=[("selected", p["surface"]), ("active", p["surface"])],
-            expand=[("selected", (1, 1, 1, 0))],
+            background=[("selected", p["field"]), ("active", p["primary_soft"])],
+            foreground=[("selected", p["primary"] if self.theme_name == "light" else p["text"])],
         )
 
         self._style_classic_widgets()
@@ -1243,21 +1262,37 @@ class ThinkTrellisApp:
         if conceptual:
             self.map_type_badge.configure(text="Mapa conceitual")
             self.organize_button.configure(text="Organizar")
+            self.intro_label.configure(text="Crie caixas e explique como uma se relaciona com a outra.")
+            self.step_one_title.configure(text="Crie os conceitos")
+            self.step_one_detail.configure(text="Clique em + Conceito para colocar as caixas que você precisa.")
+            self.step_two_title.configure(text="Clique em Conectar")
+            self.step_two_detail.configure(text="Escolha a caixa de onde a seta sai e a caixa para onde ela vai.")
+            self.step_three_title.configure(text="Escreva a frase da seta")
+            self.step_three_detail.configure(text="Exemplo: “1 depende de 2”. Depois clique em Criar ligação.")
             self.tree_group.configure(text="Conceitos do mapa")
-            self.canvas_hint_label.configure(text="+ Conceito cria uma caixa • Conectar liga duas caixas com uma seta")
+            self.canvas_hint_label.configure(text="Clique para selecionar • Arraste as caixas • As setas mostram as relações")
             self.details_group.configure(text="Detalhes do conceito")
             self.parent_field_label.configure(text="Relações")
             self.collapse_button.configure(state="disabled")
             self.delete_button.configure(text="Apagar conceito")
+            self.right_tip_label.configure(text="Use os botões + Conceito e Conectar no alto da tela. Os atalhos são opcionais.")
         else:
             self.map_type_badge.configure(text="Mapa mental")
             self.organize_button.configure(text="Organizar")
+            self.intro_label.configure(text="Um mapa de cada vez, sem complicação.")
+            self.step_one_title.configure(text="Escolha uma ideia")
+            self.step_one_detail.configure(text="Clique na caixa que você quer desenvolver.")
+            self.step_two_title.configure(text="Clique em + Subideia")
+            self.step_two_detail.configure(text="Uma caixa nova aparece ligada à ideia escolhida.")
+            self.step_three_title.configure(text="Dê um nome à nova caixa")
+            self.step_three_detail.configure(text="Escreva à direita e clique em Aplicar alterações.")
             self.tree_group.configure(text="Estrutura do mapa")
-            self.canvas_hint_label.configure(text="Marque uma caixa e use + Subideia • Arraste as caixas para reorganizar")
+            self.canvas_hint_label.configure(text="Clique para selecionar • Arraste caixas • Arraste o fundo para navegar")
             self.details_group.configure(text="Detalhes da ideia")
             self.parent_field_label.configure(text="Conectada a")
             self.collapse_button.configure(state="normal")
             self.delete_button.configure(text="Apagar ideia")
+            self.right_tip_label.configure(text="Não precisa decorar atalhos: use os botões no alto da tela.")
         self._update_action_buttons()
         if hasattr(self, "edit_menu"):
             self._populate_edit_menu()

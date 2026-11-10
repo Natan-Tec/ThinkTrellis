@@ -32,12 +32,11 @@ class ThemeTests(unittest.TestCase):
             self.assertGreaterEqual(contrast_ratio(palette["primary_text"], palette["primary"]), 4.5, theme)
             self.assertGreaterEqual(contrast_ratio(palette["danger"], palette["surface"]), 4.5, theme)
 
-    def test_bevel_goes_from_light_to_dark(self) -> None:
-        from thinktrellis.colors import relative_luminance
-
+    def test_borders_are_visible_but_soft(self) -> None:
         for theme, palette in THEMES.items():
-            levels = [relative_luminance(palette[key]) for key in ("hilite", "light", "surface", "shadow", "darkshadow")]
-            self.assertEqual(levels, sorted(levels, reverse=True), theme)
+            ratio = contrast_ratio(palette["border"], palette["surface"])
+            self.assertGreater(ratio, 1.1, theme)
+            self.assertLess(ratio, 3, theme)
 
 
 if __name__ == "__main__":
